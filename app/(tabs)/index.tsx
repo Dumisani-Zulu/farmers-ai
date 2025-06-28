@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, RefreshControl, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
 import WeatherCard from '@/components/WeatherCard';
 import HourlyForecast from '@/components/HourlyForecast';
 import DailyForecast from '@/components/DailyForecast';
@@ -15,12 +16,14 @@ import {
 export default function CurrentWeather() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true); // Start with loading true
+  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [currentWeather, setCurrentWeather] = useState({
     temperature: 72,
     condition: 'Partly Cloudy',
     humidity: 65,
     windSpeed: 8,
-    location: 'Madison County, IA',
+    location: 'Getting location...',
     feelsLike: 75,
   });
   const [hourlyData, setHourlyData] = useState([
@@ -42,7 +45,66 @@ export default function CurrentWeather() {
     { day: 'Thu', date: 'Jul 3', high: 81, low: 67, condition: 'partly cloudy', precipitationChance: 15 },
     { day: 'Fri', date: 'Jul 4', high: 84, low: 70, condition: 'sunny', precipitationChance: 0 },
   ]);
-  const [loading, setLoading] = useState(false);
+  // Remove the duplicate loading state declaration since it's now defined above
+
+  // Function to get user's current location
+  const getCurrentLocation = async () => {
+    try {
+      // Request location permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        setLocationPermissionGranted(false);
+        Alert.alert(
+          'Location Permission Required',
+          'Please enable location access to get weather for your current location. You can still search for locations manually.',
+          [{ text: 'OK' }]
+        );
+        // Set a default location and stop loading
+        setCurrentWeather(prev => ({ ...prev, location: 'Madison County, IA' }));
+        setLoading(false);
+        return;
+      }
+
+      setLocationPermissionGranted(true);
+      
+      // Get current position
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = location.coords;
+      
+      // Reverse geocode to get location name
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (reverseGeocode && reverseGeocode.length > 0) {
+        const address = reverseGeocode[0];
+        const locationName = `${address.city || address.district || 'Unknown City'}${address.region ? ', ' + address.region : ''}${address.country ? ', ' + address.country : ''}`;
+        
+        // Fetch weather data for current location
+        await fetchWeatherData(latitude, longitude, locationName);
+      } else {
+        // Fallback if reverse geocoding fails
+        await fetchWeatherData(latitude, longitude, `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+      }
+      
+    } catch (error) {
+      console.error('Location error:', error);
+      setLocationPermissionGranted(false);
+      Alert.alert(
+        'Location Error',
+        'Unable to get your current location. You can search for locations manually.',
+        [{ text: 'OK' }]
+      );
+      // Set a default location and stop loading
+      setCurrentWeather(prev => ({ ...prev, location: 'Madison County, IA' }));
+      setLoading(false);
+    }
+  };
 
   // Function to get coordinates from location name using a free geocoding service
   const getCoordinates = async (locationName: string) => {
@@ -203,6 +265,7 @@ export default function CurrentWeather() {
     if (coordinates) {
       const fullLocationName = `${coordinates.name}${coordinates.admin1 ? ', ' + coordinates.admin1 : ''}, ${coordinates.country}`;
       await fetchWeatherData(coordinates.latitude, coordinates.longitude, fullLocationName);
+      setLocationPermissionGranted(false); // Mark as searched location, not current location
       setSearchQuery(''); // Clear search after successful search
     } else {
       Alert.alert('Error', 'Location not found. Please try a different search term.');
@@ -211,8 +274,11 @@ export default function CurrentWeather() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (currentWeather.location !== 'Madison County, IA') {
+    if (locationPermissionGranted) {
       // Re-fetch current location data
+      await getCurrentLocation();
+    } else if (currentWeather.location !== 'Madison County, IA' && currentWeather.location !== 'Getting location...') {
+      // Re-fetch searched location data
       const coordinates = await getCoordinates(currentWeather.location);
       if (coordinates) {
         await fetchWeatherData(coordinates.latitude, coordinates.longitude, currentWeather.location);
@@ -220,6 +286,11 @@ export default function CurrentWeather() {
     }
     setRefreshing(false);
   };
+
+  // useEffect to get current location on component mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   const additionalMetrics = [
     { icon: <Eye size={20} color="#6b7280" />, label: 'Visibility', value: '10 mi' },
@@ -241,7 +312,7 @@ export default function CurrentWeather() {
           <View className="flex-row items-center justify-center mb-2">
             <MapPin size={16} color="#6b7280" />
             <Text className="text-sm font-inter-medium text-gray-600 ml-1">
-              Current Location
+              {locationPermissionGranted ? 'Current Location' : 'Location'}
             </Text>
           </View>
           <Text className="text-2xl font-inter-bold text-center text-gray-900 mb-4">
@@ -272,10 +343,39 @@ export default function CurrentWeather() {
               </Text>
             </TouchableOpacity>
           </View>
+          
+          {/* Current Location Button - Only show if not already using current location */}
+          {!locationPermissionGranted && (
+            <TouchableOpacity
+              onPress={getCurrentLocation}
+              disabled={loading}
+              className="bg-blue-600 rounded-xl px-4 py-3 flex-row items-center justify-center"
+            >
+              <MapPin size={16} color="white" />
+              <Text className="text-white font-inter-medium text-sm ml-2">
+                {loading ? 'Getting Location...' : 'Use Current Location'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Current Weather Card */}
-        <WeatherCard {...currentWeather} />
+        {loading ? (
+          <View className="mx-4 mb-6">
+            <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+              <View className="items-center">
+                <Text className="text-lg font-inter-medium text-gray-600 mb-2">
+                  Getting your location...
+                </Text>
+                <Text className="text-sm font-inter text-gray-500 text-center">
+                  Please allow location access to get weather for your current location
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <WeatherCard {...currentWeather} />
+        )}
 
         {/* Hourly Forecast */}
         <View className="mt-6">

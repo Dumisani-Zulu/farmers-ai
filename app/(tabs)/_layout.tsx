@@ -43,7 +43,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="season-advice"
           options={{
-            title: 'Season Advice',
+            title: 'Advisor',
             tabBarIcon: ({ size, color }) => (
               <Calendar size={size} color={color} />
             ),
