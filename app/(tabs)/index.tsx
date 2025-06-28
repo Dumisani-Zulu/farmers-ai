@@ -308,7 +308,7 @@ export default function CurrentWeather() {
         className="flex-1"
       >
         {/* Header */}
-        <View className="pb-6 px-4">
+        <View className="pb-6 px-4 mt-3">
           <View className="flex-row items-center justify-center mb-2">
             <MapPin size={16} color="#6b7280" />
             <Text className="text-sm font-inter-medium text-gray-600 ml-1">
