@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -152,11 +152,21 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => void }) => (
-  <TouchableOpacity 
-    className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex-row items-center"
-    onPress={() => onPress(tool.id)}
-  >
+const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => void }) => {
+  console.log('ToolCard rendered for tool:', tool.id, 'onPress type:', typeof onPress);
+  
+  return (
+    <TouchableOpacity 
+      className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex-row items-center"
+      onPress={() => {
+        console.log('ToolCard pressed, tool.id:', tool.id, 'onPress:', typeof onPress);
+        if (typeof onPress === 'function') {
+          onPress(tool.id);
+        } else {
+          console.error('onPress is not a function:', onPress);
+        }
+      }}
+    >
     <View className="mr-4">
       {tool.icon}
     </View>
@@ -188,7 +198,8 @@ const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => 
       </View>
     </View>
   </TouchableOpacity>
-);
+  );
+};
 
 export default function ToolsScreen() {
   const [selectedCategory, setSelectedCategory] = React.useState('all');
@@ -198,7 +209,9 @@ export default function ToolsScreen() {
     ? tools 
     : tools.filter(tool => tool.category === selectedCategory);
 
-  const handleToolPress = (toolId: string) => {
+  const handleToolPress = useCallback((toolId: string) => {
+    console.log('handleToolPress called with toolId:', toolId);
+    console.log('typeof handleToolPress:', typeof handleToolPress);
     switch (toolId) {
       case '8': // Plant Disease Identifier
         setCurrentScreen('plant-disease');
@@ -213,14 +226,29 @@ export default function ToolsScreen() {
         setCurrentScreen('soil-analyzer');
         break;
       default:
-        // Handle other tools or show coming soon message
+        console.log('Tool not implemented yet:', toolId);
         break;
     }
-  };
+  }, []);
 
-  const handleBackToMain = () => {
+  const handleBackToMain = useCallback(() => {
     setCurrentScreen('main');
-  };
+  }, []);
+
+  const handleDiseaseIdPress = useCallback(() => {
+    console.log('Disease ID pressed');
+    setCurrentScreen('plant-disease');
+  }, []);
+
+  const handlePestIdPress = useCallback(() => {
+    console.log('Pest ID pressed');
+    setCurrentScreen('pest-identifier');
+  }, []);
+
+  const handleSoilAnalyzerPress = useCallback(() => {
+    console.log('Soil Analyzer pressed');
+    setCurrentScreen('soil-analyzer');
+  }, []);
 
   // Render AI tool screens
   if (currentScreen === 'plant-disease') {
@@ -251,7 +279,7 @@ export default function ToolsScreen() {
             <TouchableOpacity 
               className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
               style={{ width: '48%' }}
-              onPress={() => handleToolPress('8')}
+              onPress={handleDiseaseIdPress}
             >
               <Camera size={32} color="#059669" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Disease ID</Text>
@@ -262,7 +290,7 @@ export default function ToolsScreen() {
             <TouchableOpacity 
               className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
               style={{ width: '48%' }}
-              onPress={() => handleToolPress('9')}
+              onPress={handlePestIdPress}
             >
               <Bug size={32} color="#ef4444" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Pest ID</Text>
@@ -273,7 +301,7 @@ export default function ToolsScreen() {
             <TouchableOpacity 
               className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
               style={{ width: '48%' }}
-              onPress={() => handleToolPress('11')}
+              onPress={handleSoilAnalyzerPress}
             >
               <TestTube size={32} color="#8b5cf6" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Soil Analyzer</Text>
@@ -281,7 +309,11 @@ export default function ToolsScreen() {
                 <Text className="text-xs text-white font-medium">AI</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" style={{ width: '48%' }}>
+            <TouchableOpacity 
+              className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
+              style={{ width: '48%' }}
+              onPress={() => handleToolPress('1')}
+            >
               <Calculator size={32} color="#10b981" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Field Calculator</Text>
             </TouchableOpacity>
