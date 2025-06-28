@@ -12,9 +12,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// Import polyfills for TensorFlow.js
+import '../lib/polyfills';
+
 // Import global CSS for web
 if (Platform.OS === 'web') {
-  require('../global.css');
+  import('../global.css');
 }
 
 SplashScreen.preventAutoHideAsync();

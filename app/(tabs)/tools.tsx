@@ -11,19 +11,27 @@ import {
   MapPin, 
   Camera,
   Thermometer,
-  Sun,
   CloudRain,
-  Wrench
+  Wrench,
+  Bug,
+  Zap,
+  TestTube
 } from 'lucide-react-native';
+import PlantDiseaseIdentifier from '../../components/PlantDiseaseIdentifier';
+import PestIdentifier from '../../components/PestIdentifier';
+import WeedIdentifier from '../../components/WeedIdentifier';
+import AISoilAnalyzer from '../../components/AISoilAnalyzer';
 
 interface Tool {
   id: string;
   name: string;
   description: string;
   icon: React.ReactNode;
-  category: 'calculator' | 'planning' | 'monitoring' | 'financial';
+  category: 'calculator' | 'planning' | 'monitoring' | 'financial' | 'ai-tools';
   isNew?: boolean;
 }
+
+type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'weed-identifier' | 'soil-analyzer';
 
 const tools: Tool[] = [
   {
@@ -78,21 +86,45 @@ const tools: Tool[] = [
   },
   {
     id: '8',
-    name: 'Disease Identifier',
-    description: 'Identify plant diseases using camera',
+    name: 'Plant Disease Identifier',
+    description: 'Identify plant diseases using AI-powered photo analysis',
     icon: <Camera size={24} color="#059669" />,
-    category: 'monitoring',
+    category: 'ai-tools',
     isNew: true,
   },
   {
     id: '9',
+    name: 'Pest Identifier', 
+    description: 'Identify agricultural pests with AI image recognition',
+    icon: <Bug size={24} color="#ef4444" />,
+    category: 'ai-tools',
+    isNew: true,
+  },
+  {
+    id: '10',
+    name: 'Weed Identifier',
+    description: 'Identify and manage weeds using AI technology',
+    icon: <Zap size={24} color="#10b981" />,
+    category: 'ai-tools',
+    isNew: true,
+  },
+  {
+    id: '11',
+    name: 'AI Soil Analyzer',
+    description: 'Analyze soil health and get improvement recommendations',
+    icon: <TestTube size={24} color="#8b5cf6" />,
+    category: 'ai-tools',
+    isNew: true,
+  },
+  {
+    id: '12',
     name: 'Soil Temperature Monitor',
     description: 'Track soil temperature for optimal planting',
     icon: <Thermometer size={24} color="#dc2626" />,
     category: 'monitoring',
   },
   {
-    id: '10',
+    id: '13',
     name: 'Weather Impact Assessment',
     description: 'Assess weather impact on crop yield',
     icon: <CloudRain size={24} color="#6b7280" />,
@@ -102,6 +134,7 @@ const tools: Tool[] = [
 
 const categories = [
   { id: 'all', name: 'All Tools', icon: <Wrench size={16} color="#6b7280" /> },
+  { id: 'ai-tools', name: 'AI Tools', icon: <TestTube size={16} color="#8b5cf6" /> },
   { id: 'calculator', name: 'Calculators', icon: <Calculator size={16} color="#10b981" /> },
   { id: 'planning', name: 'Planning', icon: <Calendar size={16} color="#8b5cf6" /> },
   { id: 'monitoring', name: 'Monitoring', icon: <TrendingUp size={16} color="#ec4899" /> },
@@ -110,6 +143,7 @@ const categories = [
 
 const getCategoryColor = (category: string) => {
   switch (category) {
+    case 'ai-tools': return '#8b5cf6';
     case 'calculator': return '#10b981';
     case 'planning': return '#8b5cf6';
     case 'monitoring': return '#ec4899';
@@ -118,8 +152,11 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const ToolCard = ({ tool }: { tool: Tool }) => (
-  <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex-row items-center">
+const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => void }) => (
+  <TouchableOpacity 
+    className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex-row items-center"
+    onPress={() => onPress(tool.id)}
+  >
     <View className="mr-4">
       {tool.icon}
     </View>
@@ -146,19 +183,58 @@ const ToolCard = ({ tool }: { tool: Tool }) => (
       </View>
     </View>
     <View className="ml-2">
-      <TouchableOpacity className="bg-gray-100 rounded-lg p-2">
+      <View className="bg-gray-100 rounded-lg p-2">
         <Text className="text-xs font-medium text-gray-700">Open</Text>
-      </TouchableOpacity>
+      </View>
     </View>
   </TouchableOpacity>
 );
 
 export default function ToolsScreen() {
   const [selectedCategory, setSelectedCategory] = React.useState('all');
+  const [currentScreen, setCurrentScreen] = React.useState<ToolScreen>('main');
 
   const filteredTools = selectedCategory === 'all' 
     ? tools 
     : tools.filter(tool => tool.category === selectedCategory);
+
+  const handleToolPress = (toolId: string) => {
+    switch (toolId) {
+      case '8': // Plant Disease Identifier
+        setCurrentScreen('plant-disease');
+        break;
+      case '9': // Pest Identifier
+        setCurrentScreen('pest-identifier');
+        break;
+      case '10': // Weed Identifier
+        setCurrentScreen('weed-identifier');
+        break;
+      case '11': // AI Soil Analyzer
+        setCurrentScreen('soil-analyzer');
+        break;
+      default:
+        // Handle other tools or show coming soon message
+        break;
+    }
+  };
+
+  const handleBackToMain = () => {
+    setCurrentScreen('main');
+  };
+
+  // Render AI tool screens
+  if (currentScreen === 'plant-disease') {
+    return <PlantDiseaseIdentifier onBack={handleBackToMain} />;
+  }
+  if (currentScreen === 'pest-identifier') {
+    return <PestIdentifier onBack={handleBackToMain} />;
+  }
+  if (currentScreen === 'weed-identifier') {
+    return <WeedIdentifier onBack={handleBackToMain} />;
+  }
+  if (currentScreen === 'soil-analyzer') {
+    return <AISoilAnalyzer onBack={handleBackToMain} />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -172,24 +248,42 @@ export default function ToolsScreen() {
         <View className="mb-6">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Quick Access</Text>
           <View className="flex-row flex-wrap justify-between">
-            <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" style={{ width: '48%' }}>
-              <Calculator size={32} color="#10b981" />
-              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Field Calculator</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" style={{ width: '48%' }}>
-              <Droplets size={32} color="#06b6d4" />
-              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Irrigation Plan</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" style={{ width: '48%' }}>
+            <TouchableOpacity 
+              className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
+              style={{ width: '48%' }}
+              onPress={() => handleToolPress('8')}
+            >
               <Camera size={32} color="#059669" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Disease ID</Text>
               <View className="bg-green-500 px-2 py-1 rounded-full mt-1">
-                <Text className="text-xs text-white font-medium">NEW</Text>
+                <Text className="text-xs text-white font-medium">AI</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
+              style={{ width: '48%' }}
+              onPress={() => handleToolPress('9')}
+            >
+              <Bug size={32} color="#ef4444" />
+              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Pest ID</Text>
+              <View className="bg-red-500 px-2 py-1 rounded-full mt-1">
+                <Text className="text-xs text-white font-medium">AI</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
+              style={{ width: '48%' }}
+              onPress={() => handleToolPress('11')}
+            >
+              <TestTube size={32} color="#8b5cf6" />
+              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Soil Analyzer</Text>
+              <View className="bg-purple-500 px-2 py-1 rounded-full mt-1">
+                <Text className="text-xs text-white font-medium">AI</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" style={{ width: '48%' }}>
-              <DollarSign size={32} color="#f59e0b" />
-              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Revenue Calc</Text>
+              <Calculator size={32} color="#10b981" />
+              <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Field Calculator</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -222,7 +316,7 @@ export default function ToolsScreen() {
             {selectedCategory === 'all' ? 'All Tools' : categories.find(c => c.id === selectedCategory)?.name}
           </Text>
           {filteredTools.map(tool => (
-            <ToolCard key={tool.id} tool={tool} />
+            <ToolCard key={tool.id} tool={tool} onPress={handleToolPress} />
           ))}
         </View>
 
@@ -230,7 +324,7 @@ export default function ToolsScreen() {
         <TouchableOpacity className="bg-green-50 border-2 border-dashed border-green-300 rounded-xl p-6 mt-4 items-center">
           <Text className="text-green-600 font-semibold mb-2">Need a specific tool?</Text>
           <Text className="text-sm text-green-600 text-center mb-3">
-            Suggest a new farming tool and we'll consider adding it
+            Suggest a new farming tool and we&apos;ll consider adding it
           </Text>
           <TouchableOpacity className="bg-green-600 px-4 py-2 rounded-lg">
             <Text className="text-white text-sm font-medium">Suggest Tool</Text>

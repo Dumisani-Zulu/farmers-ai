@@ -1,6 +1,10 @@
+// Import polyfills first
+import './polyfills';
+
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
 import '@tensorflow/tfjs-backend-webgl';
+import { Platform } from 'react-native';
 
 class TensorFlowService {
   private initialized = false;
@@ -9,8 +13,10 @@ class TensorFlowService {
     if (this.initialized) return;
 
     try {
-      // Wait for TensorFlow to be ready
-      await tf.ready();
+      // Initialize platform for React Native
+      if (Platform.OS !== 'web') {
+        await tf.ready();
+      }
       
       console.log('TensorFlow.js initialized successfully');
       console.log('Backend:', tf.getBackend());

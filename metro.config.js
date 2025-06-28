@@ -12,6 +12,10 @@ config.resolver = {
   ...config.resolver,
   assetExts: config.resolver.assetExts.filter((ext) => ext !== 'svg'),
   sourceExts: [...config.resolver.sourceExts, 'svg', 'css'],
+  alias: {
+    // TensorFlow.js compatibility
+    'crypto': require.resolve('expo-crypto'),
+  },
 };
 
 module.exports = config;
