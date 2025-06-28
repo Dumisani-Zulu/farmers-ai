@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -141,7 +141,7 @@ export default function WelcomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <LinearGradient colors={['#f0f9f0', '#dcf2dc']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 10,
   },
   logoContainer: {
@@ -318,6 +318,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: 20,
     paddingVertical: 24,
+    paddingBottom: 32,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
