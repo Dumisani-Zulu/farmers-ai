@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BlurView } from 'expo-blur';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../lib/auth-service';
 
 interface FormData {
@@ -98,6 +97,44 @@ export default function AuthScreen() {
     return true;
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      // Simulate Google sign-in process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mock Google user data
+      const googleUser = {
+        email: 'user@gmail.com',
+        name: 'Google User',
+        farmName: 'Google Farm',
+      };
+
+      const success = await authService.signUp(
+        googleUser.email,
+        'google_auth_token',
+        googleUser.farmName,
+        ''
+      );
+
+      if (success) {
+        const hasConsent = await AsyncStorage.getItem('consent_given');
+        if (hasConsent === 'true') {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/consent');
+        }
+      } else {
+        Alert.alert('Error', 'Google sign-in failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Error', 'Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -118,7 +155,6 @@ export default function AuthScreen() {
       }
 
       if (success) {
-        // Check if consent is already given
         const hasConsent = await AsyncStorage.getItem('consent_given');
         
         if (hasConsent === 'true') {
@@ -141,49 +177,9 @@ export default function AuthScreen() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const renderInput = (
-    placeholder: string,
-    value: string,
-    onChangeText: (text: string) => void,
-    options: {
-      secureTextEntry?: boolean;
-      keyboardType?: 'default' | 'email-address';
-      icon: keyof typeof Ionicons.glyphMap;
-      showToggle?: boolean;
-      showValue?: boolean;
-      onToggle?: () => void;
-    }
-  ) => (
-    <View style={styles.inputContainer}>
-      <View style={styles.inputIcon}>
-        <Ionicons name={options.icon} size={20} color="#3a9b3a" />
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="#999"
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={options.secureTextEntry && !options.showValue}
-        keyboardType={options.keyboardType || 'default'}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      {options.showToggle && (
-        <TouchableOpacity style={styles.eyeIcon} onPress={options.onToggle}>
-          <Ionicons
-            name={options.showValue ? 'eye-outline' : 'eye-off-outline'}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#f0f9f0', '#dcf2dc']} style={styles.gradient}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <LinearGradient colors={['#ffffff', '#f8fffe']} style={styles.gradient}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -193,142 +189,203 @@ export default function AuthScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
+            {/* Minimalistic Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <LinearGradient
-                  colors={['#3a9b3a', '#5cb85c']}
-                  style={styles.logo}
-                >
-                  <Ionicons name="leaf" size={32} color="white" />
-                </LinearGradient>
+                <View style={styles.logo}>
+                  <Ionicons name="leaf" size={28} color="#22c55e" />
+                </View>
+                <Text style={styles.logoText}>Farmers AI</Text>
               </View>
-              <Text style={styles.title}>
-                {isLogin ? 'Welcome Back' : 'Join Farmers AI'}
-              </Text>
-              <Text style={styles.subtitle}>
-                {isLogin
-                  ? 'Sign in to access your farming dashboard'
-                  : 'Create your account to get started'
-                }
+              <Text style={styles.welcomeText}>
+                {isLogin ? 'Welcome back' : 'Create account'}
               </Text>
             </View>
 
-            {/* Form Card */}
-            <BlurView intensity={20} style={styles.formCard}>
-              <View style={styles.tabContainer}>
-                <TouchableOpacity
-                  style={[styles.tab, isLogin && styles.activeTab]}
-                  onPress={() => setIsLogin(true)}
-                >
-                  <Text style={[styles.tabText, isLogin && styles.activeTabText]}>
-                    Sign In
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.tab, !isLogin && styles.activeTab]}
-                  onPress={() => setIsLogin(false)}
-                >
-                  <Text style={[styles.tabText, !isLogin && styles.activeTabText]}>
-                    Sign Up
-                  </Text>
-                </TouchableOpacity>
+            {/* Auth Toggle */}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[styles.toggleButton, isLogin && styles.toggleButtonActive]}
+                onPress={() => setIsLogin(true)}
+              >
+                <Text style={[styles.toggleText, isLogin && styles.toggleTextActive]}>
+                  Sign In
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, !isLogin && styles.toggleButtonActive]}
+                onPress={() => setIsLogin(false)}
+              >
+                <Text style={[styles.toggleText, !isLogin && styles.toggleTextActive]}>
+                  Sign Up
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Google Sign In Button */}
+              <TouchableOpacity
+                style={[styles.googleButton, loading && styles.buttonDisabled]}
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+              >
+                <View style={styles.googleButtonContent}>
+                  <View style={styles.googleIcon}>
+                    <Text style={styles.googleIconText}>G</Text>
+                  </View>
+                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
               </View>
 
-              <View style={styles.form}>
-                {renderInput(
-                  'Email Address',
-                  formData.email,
-                  (text) => updateFormData('email', text),
-                  {
-                    icon: 'mail-outline',
-                    keyboardType: 'email-address',
-                  }
-                )}
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    placeholderTextColor="#9ca3af"
+                    value={formData.email}
+                    onChangeText={(text) => updateFormData('email', text)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
 
-                {renderInput(
-                  'Password',
-                  formData.password,
-                  (text) => updateFormData('password', text),
-                  {
-                    icon: 'lock-closed-outline',
-                    secureTextEntry: true,
-                    showToggle: true,
-                    showValue: showPassword,
-                    onToggle: () => setShowPassword(!showPassword),
-                  }
-                )}
-
-                {!isLogin && (
-                  <>
-                    {renderInput(
-                      'Confirm Password',
-                      formData.confirmPassword || '',
-                      (text) => updateFormData('confirmPassword', text),
-                      {
-                        icon: 'lock-closed-outline',
-                        secureTextEntry: true,
-                        showToggle: true,
-                        showValue: showConfirmPassword,
-                        onToggle: () => setShowConfirmPassword(!showConfirmPassword),
-                      }
-                    )}
-
-                    {renderInput(
-                      'Farm Name',
-                      formData.farmName || '',
-                      (text) => updateFormData('farmName', text),
-                      {
-                        icon: 'business-outline',
-                      }
-                    )}
-
-                    {renderInput(
-                      'Location (Optional)',
-                      formData.location || '',
-                      (text) => updateFormData('location', text),
-                      {
-                        icon: 'location-outline',
-                      }
-                    )}
-                  </>
-                )}
-
-                {isLogin && (
-                  <TouchableOpacity style={styles.forgotPassword}>
-                    <Text style={styles.forgotPasswordText}>
-                      Forgot Password?
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-                  onPress={handleSubmit}
-                  disabled={loading}
-                >
-                  <LinearGradient
-                    colors={loading ? ['#ccc', '#999'] : ['#3a9b3a', '#5cb85c']}
-                    style={styles.submitButtonGradient}
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your password"
+                    placeholderTextColor="#9ca3af"
+                    value={formData.password}
+                    onChangeText={(text) => updateFormData('password', text)}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
                   >
-                    <Text style={styles.submitButtonText}>
-                      {loading
-                        ? (isLogin ? 'Signing In...' : 'Creating Account...')
-                        : (isLogin ? 'Sign In' : 'Create Account')
-                      }
-                    </Text>
-                    {!loading && (
-                      <Ionicons name="arrow-forward" size={20} color="white" />
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
+                    <Ionicons
+                      name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                      size={20}
+                      color="#9ca3af"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </BlurView>
+
+              {/* Sign Up Additional Fields */}
+              {!isLogin && (
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Confirm Password</Text>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Confirm your password"
+                        placeholderTextColor="#9ca3af"
+                        value={formData.confirmPassword || ''}
+                        onChangeText={(text) => updateFormData('confirmPassword', text)}
+                        secureTextEntry={!showConfirmPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <TouchableOpacity
+                        style={styles.eyeButton}
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        <Ionicons
+                          name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                          size={20}
+                          color="#9ca3af"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Farm Name</Text>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="business-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your farm name"
+                        placeholderTextColor="#9ca3af"
+                        value={formData.farmName || ''}
+                        onChangeText={(text) => updateFormData('farmName', text)}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Location (Optional)</Text>
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="location-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Enter your location"
+                        placeholderTextColor="#9ca3af"
+                        value={formData.location || ''}
+                        onChangeText={(text) => updateFormData('location', text)}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+
+              {/* Forgot Password */}
+              {isLogin && (
+                <TouchableOpacity style={styles.forgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                <LinearGradient
+                  colors={loading ? ['#d1d5db', '#9ca3af'] : ['#22c55e', '#16a34a']}
+                  style={styles.submitButtonGradient}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {loading
+                      ? (isLogin ? 'Signing in...' : 'Creating account...')
+                      : (isLogin ? 'Sign In' : 'Create Account')
+                    }
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
 
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                By continuing, you agree to our Terms of Service and Privacy Policy
+                By continuing, you agree to our{' '}
+                <Text style={styles.footerLink}>Terms of Service</Text> and{' '}
+                <Text style={styles.footerLink}>Privacy Policy</Text>
               </Text>
             </View>
           </ScrollView>
@@ -341,6 +398,7 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   gradient: {
     flex: 1,
@@ -353,98 +411,147 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    minHeight: '100%',
+    paddingHorizontal: 24,
   },
   header: {
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: 40,
-    paddingBottom: 30,
+    paddingBottom: 32,
   },
   logoContainer: {
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0fdf4',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    marginRight: 8,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a421a',
-    marginBottom: 8,
+  logoText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#374151',
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#266226',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  formCard: {
-    margin: 20,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    overflow: 'hidden',
-  },
-  tabContainer: {
+  toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f0f9f0',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 32,
   },
-  tab: {
+  toggleButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: 'center',
+    borderRadius: 8,
   },
-  activeTab: {
-    backgroundColor: 'white',
+  toggleButtonActive: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  tabText: {
+  toggleText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#666',
+    color: '#6b7280',
   },
-  activeTabText: {
-    color: '#3a9b3a',
+  toggleTextActive: {
+    color: '#111827',
     fontWeight: '600',
   },
   form: {
-    padding: 24,
+    flex: 1,
+  },
+  googleButton: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    backgroundColor: '#ffffff',
+  },
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#4285f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  googleIconText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#9ca3af',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    minHeight: 48,
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
     fontSize: 16,
-    color: '#333',
+    color: '#111827',
+    paddingVertical: 12,
   },
-  eyeIcon: {
+  eyeButton: {
     padding: 4,
   },
   forgotPassword: {
@@ -452,45 +559,40 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: '#3a9b3a',
     fontSize: 14,
+    color: '#22c55e',
     fontWeight: '500',
   },
   submitButton: {
-    borderRadius: 25,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
+    marginBottom: 32,
   },
   submitButtonGradient: {
-    flexDirection: 'row',
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
   },
   submitButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: 'white',
-    marginRight: 8,
+    color: '#ffffff',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   footerText: {
     fontSize: 12,
-    color: '#666',
+    color: '#6b7280',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 18,
+  },
+  footerLink: {
+    color: '#22c55e',
+    fontWeight: '500',
   },
 });
