@@ -11,6 +11,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { authService } from '../lib/auth-service';
 
 // Import polyfills for TensorFlow.js
 import '../lib/polyfills';
@@ -32,6 +33,18 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        await authService.initialize();
+      } catch (error) {
+        console.error('Failed to initialize auth service:', error);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
@@ -44,6 +57,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="consent" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>

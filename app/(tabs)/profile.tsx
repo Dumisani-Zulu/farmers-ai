@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { authService } from '../../lib/auth-service';
 import { 
   User, 
   MapPin, 
@@ -65,6 +67,34 @@ const MenuItem = ({ icon, title, subtitle, onPress, showArrow = true }: {
 );
 
 export default function ProfileScreen() {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authService.signOut();
+              router.replace('/welcome');
+            } catch (err) {
+              console.error('Sign out error:', err);
+              Alert.alert('Sign Out Error', 'Unable to sign out. Please try again later.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 px-4 py-4">
@@ -209,7 +239,10 @@ export default function ProfileScreen() {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex-row items-center justify-center">
+        <TouchableOpacity 
+          className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex-row items-center justify-center"
+          onPress={handleSignOut}
+        >
           <LogOut size={20} color="#ef4444" />
           <Text className="text-red-600 font-semibold ml-2">Sign Out</Text>
         </TouchableOpacity>
