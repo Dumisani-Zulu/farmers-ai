@@ -245,7 +245,7 @@ export default function CurrentWeather() {
             </Text>
           </View>
           <Text className="text-2xl font-inter-bold text-center text-gray-900 mb-4">
-            Farm Weather
+            Farmers Rain Planner
           </Text>
           
           {/* Search Bar */}
