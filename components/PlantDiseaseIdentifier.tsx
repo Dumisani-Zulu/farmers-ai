@@ -65,10 +65,36 @@ const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack 
 
     setAnalyzing(true);
     try {
+      console.log('🔬 Starting plant disease analysis...');
+      console.log('📷 Image URI:', selectedImage);
+      
       const analysis = await agriculturalAITools.identifyPlantDisease(selectedImage);
+      
+      console.log('✅ Analysis completed:', analysis);
       setResult(analysis);
-    } catch {
-      Alert.alert('Analysis Failed', 'Failed to analyze the plant disease. Please try again.');
+      
+      // Show success message if analysis was successful
+      if (analysis.disease !== 'Analysis Error' && analysis.confidence > 0) {
+        console.log('🎉 Plant disease analysis successful!');
+      }
+      
+    } catch (error) {
+      console.error('❌ Plant disease analysis failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      Alert.alert(
+        'Analysis Failed', 
+        `Failed to analyze the plant disease: ${errorMessage}\n\nPlease try again with a clear, well-lit photo of plant leaves.`
+      );
+      
+      // Set error result
+      setResult({
+        disease: 'Analysis Failed',
+        confidence: 0,
+        description: `Analysis encountered an error: ${errorMessage}. Please ensure you have a clear photo showing plant leaves or affected areas.`,
+        treatment: 'Try taking a new photo with better lighting and focus on the plant leaves. If problems persist, consult with a local agricultural expert.',
+        severity: 'low'
+      });
     } finally {
       setAnalyzing(false);
     }
@@ -149,15 +175,31 @@ const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack 
 
         {/* Analyze Button */}
         {selectedImage && (
-          <TouchableOpacity 
-            onPress={analyzeImage}
-            disabled={analyzing}
-            className={`rounded-lg p-4 mb-6 ${analyzing ? 'bg-gray-400' : 'bg-purple-600'}`}
-          >
-            <Text className="text-white font-semibold text-center">
-              {analyzing ? 'Analyzing...' : 'Analyze Plant Disease'}
-            </Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity 
+              onPress={analyzeImage}
+              disabled={analyzing}
+              className={`rounded-lg p-4 mb-4 ${analyzing ? 'bg-gray-400' : 'bg-purple-600'}`}
+            >
+              <Text className="text-white font-semibold text-center">
+                {analyzing ? 'Analyzing Plant Image...' : 'Analyze Plant Disease'}
+              </Text>
+            </TouchableOpacity>
+            
+            {analyzing && (
+              <View className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <Text className="text-blue-800 text-sm text-center">
+                  🔬 Processing image with AI (server-side)...
+                </Text>
+                <Text className="text-blue-600 text-xs text-center mt-1">
+                  Using Gemini AI for expert plant disease analysis
+                </Text>
+                <Text className="text-blue-500 text-xs text-center mt-1">
+                  Server-side processing ensures accurate, professional results
+                </Text>
+              </View>
+            )}
+          </>
         )}
 
         {/* Results */}
@@ -222,11 +264,14 @@ const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack 
 
         {/* Tips */}
         <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
-          <Text className="text-blue-800 font-semibold mb-2">💡 Tips for Better Results</Text>
+          <Text className="text-blue-800 font-semibold mb-2">💡 AI Analysis Tips</Text>
           <Text className="text-blue-700 text-sm mb-1">• Take photos in good lighting</Text>
           <Text className="text-blue-700 text-sm mb-1">• Focus on affected leaf areas</Text>
           <Text className="text-blue-700 text-sm mb-1">• Avoid blurry or distant shots</Text>
-          <Text className="text-blue-700 text-sm">• Include multiple symptoms if visible</Text>
+          <Text className="text-blue-700 text-sm mb-1">• Include multiple symptoms if visible</Text>
+          <Text className="text-blue-600 text-xs mt-2">
+            ⚡ Powered by Gemini AI for professional-grade analysis
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

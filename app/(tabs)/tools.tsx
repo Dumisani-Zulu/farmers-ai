@@ -21,6 +21,8 @@ import PlantDiseaseIdentifier from '../../components/PlantDiseaseIdentifier';
 import PestIdentifier from '../../components/PestIdentifier';
 import WeedIdentifier from '../../components/WeedIdentifier';
 import AISoilAnalyzer from '../../components/AISoilAnalyzer';
+import TestPlantDiseaseAI from '../../components/TestPlantDiseaseAI';
+import LocationManager from '../../components/LocationManager';
 
 interface Tool {
   id: string;
@@ -31,7 +33,7 @@ interface Tool {
   isNew?: boolean;
 }
 
-type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'weed-identifier' | 'soil-analyzer';
+type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'weed-identifier' | 'soil-analyzer' | 'location-manager';
 
 const tools: Tool[] = [
   {
@@ -114,6 +116,14 @@ const tools: Tool[] = [
     description: 'Analyze soil health and get improvement recommendations',
     icon: <TestTube size={24} color="#8b5cf6" />,
     category: 'ai-tools',
+    isNew: true,
+  },
+  {
+    id: '11a',
+    name: 'Location Manager',
+    description: 'Manage farm locations with smart caching and search',
+    icon: <MapPin size={24} color="#3b82f6" />,
+    category: 'planning',
     isNew: true,
   },
   {
@@ -225,6 +235,9 @@ export default function ToolsScreen() {
       case '11': // AI Soil Analyzer
         setCurrentScreen('soil-analyzer');
         break;
+      case '11a': // Location Manager
+        setCurrentScreen('location-manager');
+        break;
       default:
         console.log('Tool not implemented yet:', toolId);
         break;
@@ -263,6 +276,9 @@ export default function ToolsScreen() {
   if (currentScreen === 'soil-analyzer') {
     return <AISoilAnalyzer onBack={handleBackToMain} />;
   }
+  if (currentScreen === 'location-manager') {
+    return <LocationManager onBack={handleBackToMain} />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -272,6 +288,9 @@ export default function ToolsScreen() {
       </View>
 
       <ScrollView className="flex-1 px-4 py-4">
+        {/* Test Component */}
+        <TestPlantDiseaseAI />
+        
         {/* Quick Access Tools */}
         <View className="mb-6">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Quick Access</Text>

@@ -1,6 +1,8 @@
 import { Alert } from 'react-native';
 import { agricultureAI } from '../lib/agriculture-ai';
+import { agriculturalAITools } from '../lib/agricultural-ai-tools';
 import { tensorFlowService } from '../lib/tensorflow';
+import { locationService } from '../lib/location-service';
 
 export class AppInitializer {
   private static initialized = false;
@@ -22,6 +24,16 @@ export class AppInitializer {
       console.log('🤖 Initializing Agriculture AI services...');
       await agricultureAI.initialize();
       console.log('✅ Agriculture AI services initialized successfully');
+
+      // Initialize Agricultural AI Tools (plant disease identification, etc.)
+      console.log('🌱 Initializing Agricultural AI Tools...');
+      await agriculturalAITools.initialize();
+      console.log('✅ Agricultural AI Tools initialized successfully');
+
+      // Initialize Location Service
+      console.log('📍 Initializing Location Service...');
+      await locationService.initialize();
+      console.log('✅ Location Service initialized successfully');
 
       // Memory check
       const memInfo = tensorFlowService.getMemoryInfo();

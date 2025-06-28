@@ -16,6 +16,17 @@ class TensorFlowService {
       // Initialize platform for React Native
       if (Platform.OS !== 'web') {
         await tf.ready();
+        
+        // Setup Image polyfill for React Native
+        if (!(global as any).Image) {
+          const { Image } = require('react-native');
+          (global as any).Image = Image;
+        }
+        
+        // Setup HTMLImageElement polyfill if needed
+        if (!(global as any).HTMLImageElement) {
+          (global as any).HTMLImageElement = (global as any).Image;
+        }
       }
       
       console.log('TensorFlow.js initialized successfully');
