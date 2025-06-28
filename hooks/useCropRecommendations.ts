@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { fetchWeatherApi } from 'openmeteo';
+// Using global fetch instead of openmeteo wrapper
+// import { fetchWeatherApi } from 'openmeteo';
 import * as Location from 'expo-location';
 import { geminiAI } from '@/lib/gemini-ai';
 
@@ -101,18 +102,15 @@ export const useCropRecommendations = (): UseCropRecommendationsReturn => {
 
   const fetchWeatherData = async (lat: number, lon: number): Promise<WeatherData> => {
     try {
-      const responses = await fetchWeatherApi("https://api.open-meteo.com/v1/forecast", {
-        latitude: lat,
-        longitude: lon,
-        current: ["temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m", "weather_code"],
-        daily: ["weather_code", "temperature_2m_max", "temperature_2m_min", "precipitation_sum", "relative_humidity_2m_mean"],
-        timezone: "auto",
-        forecast_days: 14
-      });
-
-      const response = responses[0];
-      const current = response.current()!;
-      const daily = response.daily()!;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+        `&current_weather=true` +
+        `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,relativehumidity_2m_mean` +
+        `&timezone=auto&forecast_days=14`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const current = data.current_weather;
+      const daily = data.daily;
 
       const getWeatherCondition = (code: number) => {
         const weatherCodes: { [key: number]: string } = {
@@ -136,40 +134,25 @@ export const useCropRecommendations = (): UseCropRecommendationsReturn => {
         return weatherCodes[code] || 'Unknown';
       };
 
-      // Build forecast array
-      const forecast = [];
-      const today = new Date();
-      
-      for (let i = 0; i < 14; i++) {
-        const date = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-        
-        if (i < daily.variables(1)!.valuesArray()!.length) {
-          const maxTemp = daily.variables(1)!.valuesArray()![i];
-          const minTemp = daily.variables(2)!.valuesArray()![i];
-          const precipitation = daily.variables(3)!.valuesArray()![i];
-          const humidity = daily.variables(4)!.valuesArray()![i];
-          const weatherCode = daily.variables(0)!.valuesArray()![i];
-          
-          forecast.push({
-            date: date.toISOString().split('T')[0],
-            temperature: {
-              min: Math.round(minTemp),
-              max: Math.round(maxTemp),
-            },
-            humidity: Math.round(humidity),
-            precipitation: Math.round(precipitation * 10) / 10,
-            condition: getWeatherCondition(weatherCode),
-          });
-        }
-      }
+      // Build forecast array using daily arrays
+      const forecast = daily.time.map((dateStr: string, i: number) => ({
+        date: dateStr,
+        temperature: {
+          min: Math.round(daily.temperature_2m_min[i]),
+          max: Math.round(daily.temperature_2m_max[i]),
+        },
+        humidity: Math.round(daily.relativehumidity_2m_mean[i]),
+        precipitation: Math.round(daily.precipitation_sum[i] * 10) / 10,
+        condition: getWeatherCondition(daily.weathercode[i]),
+      }));
 
       return {
         current: {
-          temperature: Math.round(current.variables(0)!.value()),
-          humidity: Math.round(current.variables(1)!.value()),
-          precipitation: Math.round(current.variables(2)!.value() * 10) / 10,
-          windSpeed: Math.round(current.variables(3)!.value() * 2.237), // Convert m/s to mph
-          condition: getWeatherCondition(current.variables(4)!.value()),
+          temperature: Math.round(current.temperature),
+          humidity: 0, // not available in current_weather
+          precipitation: 0, // not available in current_weather
+          windSpeed: Math.round(current.windspeed * 2.237), // convert m/s to mph
+          condition: getWeatherCondition(current.weathercode),
         },
         forecast,
       };
@@ -214,7 +197,6 @@ export const useCropRecommendations = (): UseCropRecommendationsReturn => {
   const getFallbackRecommendations = (weather: WeatherData, locationData: LocationData): CropRecommendation[] => {
     const avgTemp = weather.forecast.slice(0, 7).reduce((acc, day) => acc + (day.temperature.min + day.temperature.max) / 2, 0) / 7;
     const totalRainfall = weather.forecast.slice(0, 7).reduce((acc, day) => acc + day.precipitation, 0);
-    const avgHumidity = weather.forecast.slice(0, 7).reduce((acc, day) => acc + day.humidity, 0) / 7;
     
     const recommendations: CropRecommendation[] = [];
     
