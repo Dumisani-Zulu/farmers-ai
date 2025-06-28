@@ -103,12 +103,12 @@ Make the advice practical and region-specific.`;
     return await this.generateText(prompt);
   }
 
-  async generateWeatherBasedAdvice(forecast: Array<{
+  async generateWeatherBasedAdvice(forecast: {
     date: string;
     temperature: number;
     humidity: number;
     precipitation: number;
-  }>, cropType?: string): Promise<string> {
+  }[], cropType?: string): Promise<string> {
     const forecastSummary = forecast.map(day => 
       `${day.date}: ${day.temperature.toFixed(1)}°C, ${day.humidity.toFixed(1)}% humidity, ${day.precipitation.toFixed(1)}mm rain`
     ).join('\n');
@@ -185,6 +185,83 @@ Please provide:
 7. Economic thresholds for treatment decisions
 
 Include both emergency response and integrated management approaches.`;
+
+    return await this.generateText(prompt);
+  }
+
+  async generateCropRecommendations(weatherData: {
+    current: {
+      temperature: number;
+      humidity: number;
+      precipitation: number;
+      condition: string;
+    };
+    forecast: {
+      date: string;
+      temperature: { min: number; max: number };
+      humidity: number;
+      precipitation: number;
+      condition: string;
+    }[];
+  }, location: { latitude: number; longitude: number; name: string }): Promise<string> {
+    const weatherSummary = `
+Current Weather:
+- Temperature: ${weatherData.current.temperature}°C
+- Humidity: ${weatherData.current.humidity}%
+- Precipitation: ${weatherData.current.precipitation}mm
+- Condition: ${weatherData.current.condition}
+
+14-Day Forecast:
+${weatherData.forecast.map(day => 
+  `${day.date}: ${day.temperature.min}°C - ${day.temperature.max}°C, ${day.humidity}% humidity, ${day.precipitation}mm rain, ${day.condition}`
+).join('\n')}
+
+Location: ${location.name} (${location.latitude}°N, ${location.longitude}°E)
+`;
+
+    const prompt = `As an expert agricultural consultant, analyze the current weather conditions and 14-day forecast to recommend the best crops to plant now. Consider the location's climate zone, current season, and upcoming weather patterns.
+
+${weatherSummary}
+
+Please provide 5-7 crop recommendations in the following JSON format (respond with valid JSON only):
+
+{
+  "recommendations": [
+    {
+      "id": "unique_id",
+      "name": "Crop Name",
+      "variety": "Specific Variety",
+      "suitabilityScore": 85,
+      "plantingWindow": "Next 2-3 weeks",
+      "expectedHarvest": "3-4 months from planting",
+      "reasons": [
+        "Excellent temperature range for germination",
+        "Adequate moisture from expected rainfall",
+        "Low pest pressure during this season"
+      ],
+      "warnings": [
+        "Monitor for late frost risk"
+      ],
+      "plantingTips": [
+        "Plant after soil temperature reaches 15°C",
+        "Ensure good drainage to prevent waterlogging",
+        "Consider row covers if temperatures drop below 10°C"
+      ]
+    }
+  ]
+}
+
+Consider factors like:
+- Temperature requirements for germination and growth
+- Water requirements vs expected rainfall
+- Growing season length vs forecast period
+- Soil temperature expectations
+- Regional suitability
+- Market timing for harvest
+- Disease and pest pressure for the season
+- Frost risk assessment
+
+Focus on practical, regionally appropriate crops that farmers can realistically plant and harvest successfully given the weather conditions.`;
 
     return await this.generateText(prompt);
   }
