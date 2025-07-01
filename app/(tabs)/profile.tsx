@@ -15,32 +15,7 @@ import {
   LogOut,
   Edit,
   Camera,
-  Star,
-  Award,
-  TrendingUp,
-  Calendar
 } from 'lucide-react-native';
-
-interface UserStats {
-  totalCrops: number;
-  farmSize: string;
-  yearsExperience: number;
-  successfulHarvests: number;
-}
-
-const userStats: UserStats = {
-  totalCrops: 8,
-  farmSize: '25 hectares',
-  yearsExperience: 12,
-  successfulHarvests: 156,
-};
-
-const achievements = [
-  { id: '1', name: 'First Harvest', description: 'Completed your first successful harvest', earned: true },
-  { id: '2', name: 'Eco Farmer', description: 'Used sustainable farming practices', earned: true },
-  { id: '3', name: 'High Yield', description: 'Achieved above-average crop yield', earned: false },
-  { id: '4', name: 'Tech Savvy', description: 'Used 10+ farming tools', earned: true },
-];
 
 const MenuItem = ({ icon, title, subtitle, onPress, showArrow = true }: {
   icon: React.ReactNode;
@@ -118,55 +93,6 @@ export default function ProfileScreen() {
             <Edit size={16} color="white" />
             <Text className="text-white font-medium ml-2">Edit Profile</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Farm Stats */}
-        <View className="bg-white rounded-xl p-4 mb-6 shadow-sm">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Farm Statistics</Text>
-          <View className="flex-row justify-between">
-            <View className="items-center flex-1">
-              <TrendingUp size={24} color="#10b981" />
-              <Text className="text-xl font-bold text-gray-900 mt-2">{userStats.totalCrops}</Text>
-              <Text className="text-xs text-gray-600">Active Crops</Text>
-            </View>
-            <View className="items-center flex-1">
-              <MapPin size={24} color="#3b82f6" />
-              <Text className="text-xl font-bold text-gray-900 mt-2">{userStats.farmSize}</Text>
-              <Text className="text-xs text-gray-600">Farm Size</Text>
-            </View>
-            <View className="items-center flex-1">
-              <Calendar size={24} color="#f59e0b" />
-              <Text className="text-xl font-bold text-gray-900 mt-2">{userStats.yearsExperience}</Text>
-              <Text className="text-xs text-gray-600">Years Exp.</Text>
-            </View>
-            <View className="items-center flex-1">
-              <Award size={24} color="#ec4899" />
-              <Text className="text-xl font-bold text-gray-900 mt-2">{userStats.successfulHarvests}</Text>
-              <Text className="text-xs text-gray-600">Harvests</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Achievements */}
-        <View className="bg-white rounded-xl p-4 mb-6 shadow-sm">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Achievements</Text>
-          <View className="flex-row flex-wrap">
-            {achievements.map((achievement) => (
-              <View key={achievement.id} className="w-1/2 p-1">
-                <View className={`p-3 rounded-lg ${achievement.earned ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
-                  <View className="flex-row items-center mb-2">
-                    <Star size={16} color={achievement.earned ? "#10b981" : "#9ca3af"} />
-                    <Text className={`text-sm font-medium ml-2 ${achievement.earned ? 'text-green-700' : 'text-gray-500'}`}>
-                      {achievement.name}
-                    </Text>
-                  </View>
-                  <Text className={`text-xs ${achievement.earned ? 'text-green-600' : 'text-gray-400'}`}>
-                    {achievement.description}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
         </View>
 
         {/* Contact Information */}

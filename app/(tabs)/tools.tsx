@@ -21,7 +21,7 @@ import PlantDiseaseIdentifier from '../../components/PlantDiseaseIdentifier';
 import PestIdentifier from '../../components/PestIdentifier';
 import WeedIdentifier from '../../components/WeedIdentifier';
 import AISoilAnalyzer from '../../components/AISoilAnalyzer';
-import TestPlantDiseaseAI from '../../components/TestPlantDiseaseAI';
+// import TestPlantDiseaseAI from '../../components/TestPlantDiseaseAI';
 import LocationManager from '../../components/LocationManager';
 
 interface Tool {
@@ -289,7 +289,7 @@ export default function ToolsScreen() {
 
       <ScrollView className="flex-1 px-4 py-4">
         {/* Test Component */}
-        <TestPlantDiseaseAI />
+        {/* <TestPlantDiseaseAI /> */}
         
         {/* Quick Access Tools */}
         <View className="mb-6">
