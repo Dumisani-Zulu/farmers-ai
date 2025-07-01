@@ -74,7 +74,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@expo/webpack-config": "^19.0.1",
+    "@expo/webpack-config": "^18.0.0",
     "@types/react": "~19.0.10",
     "@types/text-encoding": "^0.0.40",
     "autoprefixer": "^10.4.21",
