@@ -1,23 +1,37 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Constants from 'expo-constants';
 
 class GeminiAIService {
   private genAI: GoogleGenerativeAI | null = null;
   private model: any = null;
   private isInitialized = false;
 
-  constructor() {
-    // Initialize will be called when needed
-  }
-
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
     try {
-      // Get API key from environment or AsyncStorage
-      const apiKey = process.env.GOOGLE_AI_API_KEY || await this.getStoredApiKey();
+      // Debug: Log what's available in Constants and environment
+      console.log('🔍 Debug - Constants.expoConfig:', Constants.expoConfig);
+      console.log('🔍 Debug - Constants.expoConfig?.extra:', Constants.expoConfig?.extra);
+      console.log('🔍 Debug - Constants.expoConfig?.extra?.googleAiApiKey:', Constants.expoConfig?.extra?.googleAiApiKey ? 'SET' : 'NOT SET');
+      console.log('🔍 Debug - process.env.GOOGLE_AI_API_KEY:', process.env.GOOGLE_AI_API_KEY ? `SET (${process.env.GOOGLE_AI_API_KEY?.substring(0, 10)}...)` : 'NOT SET');
+      
+      // Priority order: environment variable first (from .env), then Expo config
+      const apiKey = process.env.GOOGLE_AI_API_KEY || 
+                     Constants.expoConfig?.extra?.googleAiApiKey || 
+                     Constants.expoConfig?.extra?.GOOGLE_AI_API_KEY ||
+                     await this.getStoredApiKey();
+      
+      console.log('🔍 Debug - Final API key source:', 
+        process.env.GOOGLE_AI_API_KEY ? 'process.env.GOOGLE_AI_API_KEY' :
+        Constants.expoConfig?.extra?.googleAiApiKey ? 'Constants.expoConfig.extra.googleAiApiKey' :
+        Constants.expoConfig?.extra?.GOOGLE_AI_API_KEY ? 'Constants.expoConfig.extra.GOOGLE_AI_API_KEY' :
+        'stored/fallback'
+      );
+      console.log('🔍 Debug - Final API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT FOUND');
       
       if (!apiKey) {
-        throw new Error('Google AI API key not found. Please set GOOGLE_AI_API_KEY in your environment.');
+        throw new Error('Google AI API key not found. Please set GOOGLE_AI_API_KEY in your .env file or googleAiApiKey in app.json extra config.');
       }
 
       this.genAI = new GoogleGenerativeAI(apiKey);
@@ -194,6 +208,141 @@ Include both emergency response and integrated management approaches.`;
       temperature: number;
       humidity: number;
       precipitation: number;
+      windSpeed: number;
+      condition: string;
+      description: string;
+    };
+    forecast: {
+      date: string;
+      temperature: { min: number; max: number };
+      humidity: number;
+      precipitation: number;
+      windSpeed: number;
+      condition: string;
+      description: string;
+    }[];
+    location: { latitude: number; longitude: number; name?: string; city?: string; region?: string; country?: string };
+    lastUpdated: number;
+  }): Promise<string> {
+    const locationName = weatherData.location.name || 
+      `${weatherData.location.city || 'Unknown City'}${weatherData.location.region ? ', ' + weatherData.location.region : ''}${weatherData.location.country ? ', ' + weatherData.location.country : ''}`;
+
+    // Calculate average conditions for the next 7 days
+    const weeklyForecast = weatherData.forecast.slice(0, 7);
+    const avgTemp = weeklyForecast.reduce((acc, day) => acc + (day.temperature.min + day.temperature.max) / 2, 0) / 7;
+    const totalRainfall = weeklyForecast.reduce((acc, day) => acc + day.precipitation, 0);
+    const avgHumidity = weeklyForecast.reduce((acc, day) => acc + day.humidity, 0) / 7;
+    const avgWindSpeed = weeklyForecast.reduce((acc, day) => acc + day.windSpeed, 0) / 7;
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentSeason = this.getSeason(currentMonth, weatherData.location.latitude);
+
+    const weatherSummary = `
+CURRENT CONDITIONS:
+- Temperature: ${weatherData.current.temperature}°C
+- Humidity: ${weatherData.current.humidity}%
+- Precipitation: ${weatherData.current.precipitation}mm
+- Wind Speed: ${weatherData.current.windSpeed} mph
+- Condition: ${weatherData.current.description}
+
+WEEKLY FORECAST SUMMARY:
+- Average Temperature: ${Math.round(avgTemp)}°C
+- Total Expected Rainfall: ${Math.round(totalRainfall * 10) / 10}mm
+- Average Humidity: ${Math.round(avgHumidity)}%
+- Average Wind Speed: ${Math.round(avgWindSpeed)} mph
+
+LOCATION: ${locationName}
+Coordinates: ${weatherData.location.latitude.toFixed(2)}°N, ${weatherData.location.longitude.toFixed(2)}°E
+Current Season: ${currentSeason}
+Date: ${currentDate.toLocaleDateString()}
+
+DETAILED 7-DAY FORECAST:
+${weeklyForecast.map(day => 
+  `${day.date}: ${day.temperature.min}°C - ${day.temperature.max}°C, ${day.humidity}% humidity, ${day.precipitation}mm rain, ${day.windSpeed} mph wind, ${day.description}`
+).join('\n')}
+`;
+
+    const prompt = `As an expert agricultural consultant and agronomist, analyze the comprehensive weather data and provide scientifically-backed crop recommendations for this specific location and time period.
+
+${weatherSummary}
+
+ANALYSIS REQUIREMENTS:
+1. Consider temperature ranges optimal for seed germination and plant growth
+2. Evaluate water requirements vs. expected natural rainfall
+3. Assess wind conditions for plant stability and pollination
+4. Factor in humidity levels for disease prevention
+5. Account for seasonal timing and local growing patterns
+6. Consider soil temperature implications
+7. Evaluate market timing for optimal harvest periods
+
+Please provide 6-8 crop recommendations in this EXACT JSON format (respond with valid JSON only, no additional text):
+
+{
+  "recommendations": [
+    {
+      "id": "crop_1",
+      "name": "Crop Name",
+      "variety": "Recommended Variety",
+      "suitabilityScore": 88,
+      "plantingWindow": "Optimal planting timeframe",
+      "expectedHarvest": "Expected harvest timing",
+      "reasons": [
+        "Temperature perfectly matches germination requirements (X-Y°C optimal)",
+        "Expected rainfall of XYmm meets water needs without oversaturation",
+        "Current season timing aligns with natural growing cycle"
+      ],
+      "warnings": [
+        "Monitor for potential frost if temperatures drop below X°C",
+        "Ensure adequate drainage if heavy rainfall exceeds Xmm"
+      ],
+      "plantingTips": [
+        "Plant when soil temperature consistently above X°C",
+        "Space plants appropriately for wind protection",
+        "Consider mulching to retain moisture during dry periods"
+      ]
+    }
+  ]
+}
+
+IMPORTANT GUIDELINES:
+- Suitability scores should be 0-100 based on weather compatibility
+- Focus on crops that can be planted NOW and harvested within 3-6 months
+- Include both short-term (30-60 days) and medium-term (90-120 days) crops
+- Consider local/regional crop preferences when possible
+- Provide specific, actionable planting tips
+- Highlight any weather-related risks or opportunities
+- Consider companion planting possibilities
+- Factor in water conservation strategies if rainfall is limited
+
+Generate recommendations that are practical, evidence-based, and tailored to the specific weather conditions and location.`;
+
+    return await this.generateText(prompt);
+  }
+
+  private getSeason(month: number, latitude: number): string {
+    const isNorthernHemisphere = latitude >= 0;
+    
+    if (isNorthernHemisphere) {
+      if (month >= 3 && month <= 5) return 'Spring';
+      if (month >= 6 && month <= 8) return 'Summer';
+      if (month >= 9 && month <= 11) return 'Fall';
+      return 'Winter';
+    } else {
+      if (month >= 3 && month <= 5) return 'Fall';
+      if (month >= 6 && month <= 8) return 'Winter';
+      if (month >= 9 && month <= 11) return 'Spring';
+      return 'Summer';
+    }
+  }
+
+  // Legacy method for backward compatibility
+  async generateCropRecommendationsLegacy(weatherData: {
+    current: {
+      temperature: number;
+      humidity: number;
+      precipitation: number;
+      windSpeed: number;
       condition: string;
     };
     forecast: {
@@ -201,6 +350,7 @@ Include both emergency response and integrated management approaches.`;
       temperature: { min: number; max: number };
       humidity: number;
       precipitation: number;
+      windSpeed: number;
       condition: string;
     }[];
   }, location: { latitude: number; longitude: number; name: string }): Promise<string> {

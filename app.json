@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "platforms": [
       "ios",
       "android",
@@ -50,7 +49,8 @@
       "router": {},
       "eas": {
         "projectId": "43f59c1e-ba4f-4d60-a658-baa83370563a"
-      }
+      },
+      "googleAiApiKey": "AIzaSyBlMlw2x4wM3vpPgKLAYBnvt_ZGVplfK8o"
     }
   }
 }

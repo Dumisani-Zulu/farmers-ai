@@ -10,7 +10,17 @@ import {
   Droplets,
   MapPin
 } from 'lucide-react-native';
-import { CropRecommendation, WeatherData, LocationData } from '@/hooks/useCropRecommendations';
+import { CropRecommendation } from '@/hooks/useWeatherBasedCropRecommendations';
+import { WeatherData } from '@/contexts/LocationWeatherContext';
+
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  city?: string;
+  region?: string;
+  country?: string;
+  address?: string;
+}
 
 interface CropRecommendationCardProps {
   recommendation: CropRecommendation;
@@ -121,7 +131,11 @@ const WeatherSummaryCard = ({ weatherData, location }: WeatherSummaryCardProps) 
         <Text className="text-lg font-semibold text-gray-900 ml-2">Weather Overview</Text>
       </View>
       
-      <Text className="text-sm text-gray-600 mb-3">{location.name}</Text>
+      <Text className="text-sm text-gray-600 mb-3">
+        {location.city || location.address || 'Unknown location'}
+        {location.region && `, ${location.region}`}
+        {location.country && `, ${location.country}`}
+      </Text>
       
       <View className="flex-row justify-between mb-3">
         <View className="flex-1 mr-2">
@@ -143,7 +157,7 @@ const WeatherSummaryCard = ({ weatherData, location }: WeatherSummaryCardProps) 
       <View className="bg-gray-50 rounded-lg p-3">
         <Text className="text-xs text-gray-600 mb-1">Current Conditions</Text>
         <Text className="text-sm font-medium text-gray-900">
-          {weatherData.current.temperature}°C, {weatherData.current.humidity}% humidity, {weatherData.current.condition}
+          {weatherData.current.temperature}°C, {weatherData.current.humidity}% humidity, {weatherData.current.description}
         </Text>
       </View>
     </View>

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Sprout, Calendar, Droplets, TrendingUp } from 'lucide-react-native';
-import { useCropRecommendations, CropRecommendation } from '@/hooks/useCropRecommendations';
+import { Sprout, Calendar, Droplets, TrendingUp, MapPin, CloudRain } from 'lucide-react-native';
+import { useWeatherBasedCropRecommendations, CropRecommendation } from '@/hooks/useWeatherBasedCropRecommendations';
+import { useLocationWeather } from '@/contexts/LocationWeatherContext';
 import { CropRecommendationsList } from '@/components/CropRecommendationsList';
 import { CropDetailModal } from '@/components/CropDetailModal';
+import { LocationSearchModal } from '@/components/LocationSearchModal';
+import { GeminiDebugComponent } from '@/components/GeminiDebugComponent';
 
 interface CropData {
   id: string;
@@ -114,21 +117,36 @@ export default function CropsScreen() {
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [selectedCrop, setSelectedCrop] = useState<CropRecommendation | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   
+  // Use the new weather-based recommendations hook
   const {
     recommendations,
-    weatherData,
-    location,
-    isLoading,
-    error,
-    fetchRecommendations,
+    isLoading: recommendationsLoading,
+    error: recommendationsError,
     refreshRecommendations,
-  } = useCropRecommendations();
+  } = useWeatherBasedCropRecommendations();
 
+  // Use the global location/weather context
+  const {
+    currentLocation,
+    weatherData,
+    isLoading: locationLoading,
+    error: locationError,
+    updateLocation,
+    getCurrentLocation,
+  } = useLocationWeather();
+
+  const isLoading = recommendationsLoading || locationLoading;
+  const error = recommendationsError || locationError;
+
+  // Initialize location on mount if not already set
   useEffect(() => {
-    // Fetch recommendations when component mounts
-    fetchRecommendations();
-  }, [fetchRecommendations]);
+    if (!currentLocation && !locationLoading) {
+      getCurrentLocation();
+    }
+  }, [currentLocation, locationLoading, getCurrentLocation]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -167,13 +185,51 @@ export default function CropsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-4 py-4 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Crops</Text>
-        <Text className="text-sm text-gray-600 mt-1">
-          {showRecommendations 
-            ? 'Weather-based crop recommendations' 
-            : `${mockCrops.length} crops being tracked`
-          }
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-2xl font-bold text-gray-900">Crops</Text>
+            <Text className="text-sm text-gray-600 mt-1">
+              {showRecommendations 
+                ? 'Weather-based crop recommendations' 
+                : `${mockCrops.length} crops being tracked`
+              }
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowLocationSearch(true)}
+            className="flex-row items-center bg-green-50 px-3 py-2 rounded-lg mr-2"
+          >
+            <MapPin size={16} color="#10b981" />
+            <Text className="text-green-700 text-sm font-medium ml-1">
+              {currentLocation?.city || 'Location'}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Debug Button - Temporary */}
+          <TouchableOpacity
+            onPress={() => setShowDebug(true)}
+            className="bg-blue-50 px-3 py-2 rounded-lg"
+          >
+            <Text className="text-blue-700 text-xs font-medium">Debug AI</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Weather Summary */}
+        {weatherData && (
+          <View className="mt-3 p-3 bg-blue-50 rounded-lg">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <CloudRain size={16} color="#3b82f6" />
+                <Text className="text-blue-700 text-sm font-medium ml-1">
+                  {weatherData.current.temperature}°C, {weatherData.current.description}
+                </Text>
+              </View>
+              <Text className="text-blue-600 text-xs">
+                {weatherData.current.humidity}% humidity
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Toggle between recommendations and current crops */}
@@ -210,7 +266,11 @@ export default function CropsScreen() {
             <CropRecommendationsList
               recommendations={recommendations}
               weatherData={weatherData}
-              location={location}
+              location={currentLocation ? {
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+                name: currentLocation.city || currentLocation.address || `${currentLocation.latitude.toFixed(2)}, ${currentLocation.longitude.toFixed(2)}`
+              } : null}
               isLoading={isLoading}
               error={error}
               onRefresh={refreshRecommendations}
@@ -258,6 +318,30 @@ export default function CropsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Debug Modal - Temporary */}
+      {showDebug && (
+        <View className="absolute inset-0 bg-white z-50">
+          <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
+            <Text className="text-lg font-semibold">AI Debug</Text>
+            <TouchableOpacity onPress={() => setShowDebug(false)}>
+              <Text className="text-blue-600 font-medium">Close</Text>
+            </TouchableOpacity>
+          </View>
+          <GeminiDebugComponent />
+        </View>
+      )}
+
+      {/* Location Search Modal */}
+      <LocationSearchModal
+        isVisible={showLocationSearch}
+        onClose={() => setShowLocationSearch(false)}
+        onLocationSelect={(location) => {
+          updateLocation(location);
+          setShowLocationSearch(false);
+        }}
+        title="Select Location for Crop Recommendations"
+      />
 
       {/* Crop Detail Modal */}
       <CropDetailModal
