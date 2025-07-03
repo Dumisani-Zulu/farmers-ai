@@ -3,17 +3,20 @@ import { useState, useEffect } from 'react';
 import WeatherCard from '@/components/WeatherCard';
 import HourlyForecast from '@/components/HourlyForecast';
 import DailyForecast from '@/components/DailyForecast';
+import { LocationSearchModal } from '@/components/LocationSearchModal';
 import { useLocationWeather } from '@/contexts/LocationWeatherContext';
 import { 
   MapPin, 
   Thermometer, 
   Eye,
   Wind,
-  RefreshCw
+  RefreshCw,
+  Search
 } from 'lucide-react-native';
 
 export default function CurrentWeather() {
   const [refreshing, setRefreshing] = useState(false);
+  const [isLocationSearchVisible, setIsLocationSearchVisible] = useState(false);
   
   // Use the global location/weather context
   const { 
@@ -217,47 +220,83 @@ export default function CurrentWeather() {
             </View>
           </View>
           
-          {/* Refresh Button */}
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#3b82f6',
-              padding: 8,
-              borderRadius: 8,
-              marginLeft: 12,
-            }}
-            onPress={() => refreshWeatherData(true)}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} color="white" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* Search Location Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#10b981',
+                padding: 8,
+                borderRadius: 8,
+                marginRight: 8,
+              }}
+              onPress={() => setIsLocationSearchVisible(true)}
+            >
+              <Search size={16} color="white" />
+            </TouchableOpacity>
+            
+            {/* Refresh Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#3b82f6',
+                padding: 8,
+                borderRadius: 8,
+              }}
+              onPress={() => refreshWeatherData(true)}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Current Location Button - Show when no location or when there's an error */}
         {(!currentLocation || error) && (
-          <TouchableOpacity
-            style={{
-              backgroundColor: error ? '#dc2626' : '#3b82f6',
-              padding: 16,
-              borderRadius: 12,
-              marginBottom: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onPress={() => getCurrentLocation()}
-            disabled={isLoading}
-          >
-            <MapPin size={16} color="white" style={{ marginRight: 8 }} />
-            <Text style={{ 
-              color: 'white', 
-              fontWeight: '500', 
-              fontSize: 16 
-            }}>
-              {isLoading ? 'Getting Location...' : 
-               error ? 'Retry Location Detection' : 
-               'Detect Current Location'}
-            </Text>
-          </TouchableOpacity>
+          <View style={{ marginBottom: 16, gap: 8 }}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: error ? '#dc2626' : '#3b82f6',
+                padding: 16,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onPress={() => getCurrentLocation()}
+              disabled={isLoading}
+            >
+              <MapPin size={16} color="white" style={{ marginRight: 8 }} />
+              <Text style={{ 
+                color: 'white', 
+                fontWeight: '500', 
+                fontSize: 16 
+              }}>
+                {isLoading ? 'Getting Location...' : 
+                 error ? 'Retry Location Detection' : 
+                 'Detect Current Location'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#10b981',
+                padding: 16,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onPress={() => setIsLocationSearchVisible(true)}
+            >
+              <Search size={16} color="white" style={{ marginRight: 8 }} />
+              <Text style={{ 
+                color: 'white', 
+                fontWeight: '500', 
+                fontSize: 16 
+              }}>
+                Search for Location
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Error Display */}
@@ -358,6 +397,13 @@ export default function CurrentWeather() {
           </View>
         )}
       </ScrollView>
+
+      {/* Location Search Modal */}
+      <LocationSearchModal
+        isVisible={isLocationSearchVisible}
+        onClose={() => setIsLocationSearchVisible(false)}
+        title="Search Weather Location"
+      />
     </View>
   );
 }
