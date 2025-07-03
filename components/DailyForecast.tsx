@@ -48,7 +48,7 @@ const getWeatherIcon = (condition: string) => {
 
 export default function DailyForecast({ data }: DailyForecastProps) {
   return (
-    <View className="bg-white rounded-2xl p-4 mx-4 shadow-lg border border-gray-100">
+    <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 mb-2 w-full mx-auto">
       <Text className="text-lg font-inter-bold text-gray-900 mb-4">
         14-Day Forecast
       </Text>

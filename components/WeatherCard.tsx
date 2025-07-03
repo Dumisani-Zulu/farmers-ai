@@ -48,7 +48,7 @@ export default function WeatherCard({
   feelsLike,
 }: WeatherCardProps) {
   return (
-    <View className="bg-white rounded-2xl p-6 mx-4 shadow-lg border border-gray-100">
+    <View className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-4 w-full mx-auto">
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-1">
           <Text className="text-lg font-inter-medium text-gray-600 mb-1">
