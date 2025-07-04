@@ -1,9 +1,11 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { 
   Sun, 
   Cloud, 
   CloudRain,
-  Droplets
+  Droplets,
+  ChevronRight
 } from 'lucide-react-native';
 
 interface DailyForecastData {
@@ -47,11 +49,24 @@ const getWeatherIcon = (condition: string) => {
 };
 
 export default function DailyForecast({ data }: DailyForecastProps) {
+  const router = useRouter();
+
   return (
     <View className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 mb-2 w-full mx-auto">
-      <Text className="text-lg font-inter-bold text-gray-900 mb-4">
-        14-Day Forecast
-      </Text>
+      <TouchableOpacity
+        onPress={() => router.push('/forecast')}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16
+        }}
+      >
+        <Text className="text-lg font-inter-bold text-gray-900">
+          14-Day Forecast
+        </Text>
+        <ChevronRight size={20} color="#6b7280" />
+      </TouchableOpacity>
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row space-x-4">
