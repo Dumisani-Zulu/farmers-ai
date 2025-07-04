@@ -84,12 +84,14 @@ export default function ForecastScreen() {
         paddingHorizontal: 16,
         paddingVertical: 12,
         paddingTop: Math.max(insets.top + 40, 44),
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f8fafc',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowRadius: 3,
+        elevation: 3,
       }}>
         <TouchableOpacity 
           onPress={() => router.back()}

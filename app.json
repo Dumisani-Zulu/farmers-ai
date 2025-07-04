@@ -29,7 +29,18 @@
         "ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "navigationBar": {
+        "backgroundColor": "#f8fafc",
+        "barStyle": "dark-content",
+        "visible": true
+      },
+      "statusBar": {
+        "backgroundColor": "#f8fafc",
+        "barStyle": "dark-content",
+        "translucent": false
+      },
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +51,9 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-location"
+      "expo-location",
+      "expo-navigation-bar",
+      "expo-system-ui"
     ],
     "experiments": {
       "typedRoutes": true

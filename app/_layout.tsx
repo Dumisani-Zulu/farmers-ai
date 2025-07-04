@@ -66,7 +66,7 @@ export default function RootLayout() {
           <Stack.Screen name="forecast" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="light" />
+        <StatusBar style="dark" backgroundColor="#ffffff" />
       </LocationWeatherProvider>
     </SafeAreaProvider>
   );
