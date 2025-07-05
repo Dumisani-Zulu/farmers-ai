@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -342,9 +343,11 @@ export default function AuthScreen() {
             <View style={styles.header}>
               <View style={styles.logoContainer}>
                 <View style={styles.logo}>
-                  <Ionicons name="leaf" size={28} color="#22c55e" />
+                  {/* <Ionicons name="leaf" size={28} color="#22c55e" /> */}
+                  {/* icon logo */}
+                  <Image source={require('../assets/images/icon.png')} style={styles.logoImage} />
                 </View>
-                <Text style={styles.logoText}>Farmers AI</Text>
+                {/* <Text style={styles.logoText}>Farmers AI</Text> */}
               </View>
               <Text style={styles.welcomeText}>
                 {isLogin ? 'Welcome back' : 'Create account'}
@@ -608,13 +611,13 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 32,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 40,
   },
   logo: {
     width: 40,
@@ -624,6 +627,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+  },
+  logoImage: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
   },
   logoText: {
     fontSize: 20,

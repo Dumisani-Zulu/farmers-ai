@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -146,13 +147,14 @@ export default function WelcomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <LinearGradient
+            {/* <LinearGradient
               colors={['#3a9b3a', '#5cb85c']}
               style={styles.logo}
             >
-              <Ionicons name="leaf" size={24} color="white" />
-            </LinearGradient>
-            <Text style={styles.logoText}>Farmers AI</Text>
+              
+            </LinearGradient> */}
+            <Image source={require('../assets/images/icon.png')} style={styles.logo}/>
+            {/* <Text style={styles.logoText}>Farmers AI</Text> */}
           </View>
           
           <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
@@ -229,9 +231,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
