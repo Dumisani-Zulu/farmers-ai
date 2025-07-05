@@ -1,142 +1,186 @@
 import * as React from 'react';
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, Sun, Cloud, Droplets, Thermometer, AlertTriangle, CheckCircle, Clock, MapPin, RefreshCw } from 'lucide-react-native';
-import { useSeasonAdvice, SeasonAdvice } from '@/hooks/useSeasonAdvice';
-import { useLocationWeather } from '@/contexts/LocationWeatherContext';
+import { Search, Plus, MessageSquare } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useForum } from '@/hooks/useForum';
+import { ForumPostCard } from '@/components/ForumPostCard';
+import { CreatePostModal } from '@/components/CreatePostModal';
+import { useAuth } from '@/contexts/AuthContext';
 
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'high': return '#ef4444';
-    case 'medium': return '#f59e0b';
-    case 'low': return '#10b981';
-    default: return '#6b7280';
-  }
-};
+const categories = [
+  { id: 'all', label: 'All', color: '#6b7280' },
+  { id: 'general', label: 'General', color: '#6b7280' },
+  { id: 'crops', label: 'Crops', color: '#10b981' },
+  { id: 'weather', label: 'Weather', color: '#3b82f6' },
+  { id: 'pests', label: 'Pests', color: '#ef4444' },
+  { id: 'soil', label: 'Soil', color: '#8b5cf6' },
+  { id: 'irrigation', label: 'Water', color: '#06b6d4' },
+  { id: 'equipment', label: 'Equipment', color: '#f59e0b' },
+  { id: 'markets', label: 'Markets', color: '#84cc16' },
+];
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case 'planting': return <Sun size={16} color="#10b981" />;
-    case 'harvesting': return <CheckCircle size={16} color="#f59e0b" />;
-    case 'maintenance': return <Clock size={16} color="#3b82f6" />;
-    case 'weather': return <Cloud size={16} color="#6b7280" />;
-    case 'irrigation': return <Droplets size={16} color="#3b82f6" />;
-    case 'pest_control': return <AlertTriangle size={16} color="#ef4444" />;
-    default: return <Calendar size={16} color="#6b7280" />;
-  }
-};
+export default function ForumScreen() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-const AdviceCard = ({ advice, onMarkCompleted }: { advice: SeasonAdvice; onMarkCompleted: (id: string) => void }) => (
-  <TouchableOpacity 
-    className={`bg-white rounded-xl p-4 mb-3 shadow-sm border ${advice.completed ? 'border-green-200 opacity-60' : 'border-gray-100'}`}
-  >
-    <View className="flex-row justify-between items-start mb-2">
-      <View className="flex-1">
-        <View className="flex-row items-center mb-1">
-          {getCategoryIcon(advice.category)}
-          <Text className={`text-lg font-semibold ml-2 ${advice.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-            {advice.title}
-          </Text>
-          {advice.completed && <CheckCircle size={16} color="#10b981" className="ml-2" />}
-        </View>
-        <Text className={`text-sm ${advice.completed ? 'text-gray-400' : 'text-gray-600'}`}>
-          {advice.description}
-        </Text>
-      </View>
-    </View>
+  const {
+    posts,
+    isLoading,
+    error,
+    createPost,
+    likePost,
+    unlikePost,
+    loadPosts,
+    searchPosts
+  } = useForum();
 
-    <View className="flex-row justify-between items-center pt-3 border-t border-gray-100">
-      <View className="flex-row items-center">
-        <View 
-          className="px-2 py-1 rounded-full mr-3"
-          style={{ backgroundColor: `${getPriorityColor(advice.priority)}20` }}
-        >
-          <Text 
-            className="text-xs font-medium capitalize"
-            style={{ color: getPriorityColor(advice.priority) }}
-          >
-            {advice.priority}
-          </Text>
-        </View>
-        {advice.daysLeft && !advice.completed && (
-          <View className="flex-row items-center">
-            <Clock size={12} color="#6b7280" />
-            <Text className="text-xs text-gray-600 ml-1">
-              {advice.daysLeft} days left
-            </Text>
-          </View>
-        )}
-      </View>
-      {!advice.completed && (
-        <TouchableOpacity 
-          className="bg-green-600 px-3 py-1 rounded-lg"
-          onPress={() => onMarkCompleted(advice.id)}
-        >
-          <Text className="text-white text-xs font-medium">Mark Done</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  </TouchableOpacity>
-);
-
-export default function SeasonAdviceScreen() {
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  
-  const { weatherData, currentLocation, isLoading: locationLoading } = useLocationWeather();
-  const { 
-    advice, 
-    isLoading: adviceLoading, 
-    error, 
-    currentSeason, 
-    refreshAdvice, 
-    markCompleted 
-  } = useSeasonAdvice();
-
-  const isLoading = locationLoading || adviceLoading;
-
-  const filteredAdvice = advice.filter((adviceItem: SeasonAdvice) => {
-    if (filter === 'pending') return !adviceItem.completed;
-    if (filter === 'completed') return adviceItem.completed;
-    return true;
+  const filteredPosts = posts.filter(post => {
+    if (selectedCategory === 'all') return true;
+    return post.category === selectedCategory;
   });
 
-  const urgentAdvice = advice.filter((adviceItem: SeasonAdvice) => 
-    adviceItem.priority === 'high' && !adviceItem.completed && (adviceItem.daysLeft || 0) <= 7
-  );
+  const displayPosts = isSearching ? searchResults : filteredPosts;
 
   const onRefresh = useCallback(async () => {
     try {
-      await refreshAdvice();
+      await loadPosts(selectedCategory === 'all' ? undefined : selectedCategory);
     } catch (error) {
-      console.error('Failed to refresh advice:', error);
+      console.error('Failed to refresh posts:', error);
     }
-  }, [refreshAdvice]);
+  }, [loadPosts, selectedCategory]);
 
-  const handleMarkCompleted = useCallback((adviceId: string) => {
-    markCompleted(adviceId);
-  }, [markCompleted]);
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      setIsSearching(true);
+      try {
+        const results = await searchPosts(query.trim());
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      }
+    } else {
+      setIsSearching(false);
+      setSearchResults([]);
+    }
+  }, [searchPosts]);
+
+  const handleCreatePost = useCallback(async (postData: any) => {
+    console.log('Forum Screen - User before create:', user);
+    console.log('Forum Screen - Is authenticated:', isAuthenticated);
+    
+    if (!isAuthenticated || !user) {
+      Alert.alert('Authentication Required', 'Please sign in to create a post.');
+      return;
+    }
+    
+    try {
+      await createPost(postData);
+      onRefresh();
+    } catch (error) {
+      console.error('Forum Screen - Create post error:', error);
+      throw error;
+    }
+  }, [createPost, onRefresh, user, isAuthenticated]);
+
+  const handleCategoryChange = useCallback((category: string) => {
+    setSelectedCategory(category);
+    if (!isSearching) {
+      loadPosts(category === 'all' ? undefined : category);
+    }
+  }, [loadPosts, isSearching]);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      {/* Header */}
       <View className="px-4 py-4 bg-white border-b border-gray-200">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mb-4">
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-gray-900">Season Advice</Text>
-            <Text className="text-sm text-gray-600 mt-1">
-              Current: {currentSeason}
+            <Text className="text-2xl font-bold text-gray-900">Community Forum</Text>
+            <Text className="text-sm text-gray-600 mt-1 max-w-sm">
+              Share knowledge and get help from fellow farmers
             </Text>
           </View>
           <TouchableOpacity 
-            onPress={onRefresh}
-            className="bg-green-600 px-4 py-2 rounded-lg"
-            disabled={isLoading}
+            onPress={() => {
+              if (!isAuthenticated) {
+                Alert.alert('Authentication Required', 'Please sign in to create a post.');
+                return;
+              }
+              setShowCreatePost(true);
+            }}
+            className={`px-4 py-2 rounded-lg flex-row items-center ${
+              isAuthenticated ? 'bg-green-600' : 'bg-gray-400'
+            }`}
           >
-            <RefreshCw size={16} color="white" />
+            <Plus size={16} color="white" />
+            <Text className="text-white font-medium ml-1">Post</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Search Bar */}
+        <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+          <Search size={16} color="#6b7280" />
+          <TextInput
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholder="Search posts, topics, or tags..."
+            className="flex-1 ml-2 text-gray-900"
+            placeholderTextColor="#6b7280"
+          />
         </View>
       </View>
 
+      {/* Category Filter */}
+      <View className="bg-white border-b border-gray-200 py-3">
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              onPress={() => handleCategoryChange(category.id)}
+              className={`px-4 py-2 rounded-full mr-3 border ${
+                selectedCategory === category.id
+                  ? 'border-transparent'
+                  : 'border-gray-300 bg-white'
+              }`}
+              style={{
+                backgroundColor: selectedCategory === category.id
+                  ? `${category.color}20`
+                  : undefined
+              }}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  selectedCategory === category.id
+                    ? 'text-gray-900'
+                    : 'text-gray-600'
+                }`}
+                style={{
+                  color: selectedCategory === category.id
+                    ? category.color
+                    : undefined
+                }}
+              >
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Content */}
       <ScrollView 
         className="flex-1 px-4 py-4"
         refreshControl={
@@ -148,133 +192,85 @@ export default function SeasonAdviceScreen() {
         }
       >
         {/* Loading State */}
-        {isLoading && (
+        {isLoading && !posts.length && (
           <View className="bg-white rounded-xl p-6 mb-4 items-center">
-            <RefreshCw size={24} color="#16a34a" className="mb-2" />
-            <Text className="text-gray-600">Loading seasonal advice...</Text>
+            <MessageSquare size={24} color="#16a34a" className="mb-2" />
+            <Text className="text-gray-600">Loading forum posts...</Text>
           </View>
         )}
 
         {/* Error State */}
         {error && (
           <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-            <View className="flex-row items-center mb-2">
-              <AlertTriangle size={16} color="#dc2626" />
-              <Text className="text-red-800 font-semibold ml-2">Error Loading Advice</Text>
-            </View>
-            <Text className="text-red-700 text-sm">{error}</Text>
+            <Text className="text-red-800 font-semibold mb-2">Error Loading Posts</Text>
+            <Text className="text-red-700 text-sm mb-3">{error}</Text>
             <TouchableOpacity 
               onPress={onRefresh}
-              className="bg-red-600 px-3 py-2 rounded-lg mt-3 self-start"
+              className="bg-red-600 px-3 py-2 rounded-lg self-start"
             >
               <Text className="text-white text-sm font-medium">Retry</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Current Season Overview */}
-        {weatherData && !isLoading && (
-          <View className="bg-white rounded-xl p-4 mb-6 shadow-sm">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-semibold text-gray-900">Current Conditions</Text>
-              {currentLocation && (
-                <View className="flex-row items-center">
-                  <MapPin size={12} color="#6b7280" />
-                  <Text className="text-xs text-gray-600 ml-1">
-                    {currentLocation.city || currentLocation.address || 'Unknown location'}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View className="flex-row justify-between mb-3">
-              <View className="flex-1 mr-2">
-                <View className="flex-row items-center mb-1">
-                  <Thermometer size={14} color="#ef4444" />
-                  <Text className="text-xs text-gray-600 ml-1">Temperature</Text>
-                </View>
-                <Text className="text-sm font-medium">
-                  {weatherData.current.temperature}°C
-                </Text>
-              </View>
-              <View className="flex-1 ml-2">
-                <View className="flex-row items-center mb-1">
-                  <Droplets size={14} color="#3b82f6" />
-                  <Text className="text-xs text-gray-600 ml-1">Humidity</Text>
-                </View>
-                <Text className="text-sm font-medium">{weatherData.current.humidity}%</Text>
-              </View>
-            </View>
-            <View className="flex-row items-center">
-              <Cloud size={14} color="#6b7280" />
-              <Text className="text-sm text-gray-600 ml-1">
-                {weatherData.current.description}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Filter Buttons */}
-        <View className="flex-row mb-4">
-          {(['all', 'pending', 'completed'] as const).map((filterType) => (
-            <TouchableOpacity
-              key={filterType}
-              onPress={() => setFilter(filterType)}
-              className={`px-4 py-2 rounded-lg mr-2 ${
-                filter === filterType ? 'bg-green-600' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <Text className={`text-sm font-medium capitalize ${
-                filter === filterType ? 'text-white' : 'text-gray-700'
-              }`}>
-                {filterType}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Urgent Tasks */}
-        {filter !== 'completed' && urgentAdvice.length > 0 && (
-          <View className="mb-6">
-            <View className="flex-row items-center mb-3">
-              <AlertTriangle size={16} color="#ef4444" />
-              <Text className="text-lg font-semibold text-gray-900 ml-2">Urgent Tasks</Text>
-            </View>
-            {urgentAdvice.map((adviceItem: SeasonAdvice) => (
-              <AdviceCard 
-                key={adviceItem.id} 
-                advice={adviceItem} 
-                onMarkCompleted={handleMarkCompleted}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* All Advice */}
-        <View>
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            {filter === 'all' ? 'All Recommendations' : 
-             filter === 'pending' ? 'Pending Tasks' : 'Completed Tasks'}
-          </Text>
-          {filteredAdvice.map((adviceItem: SeasonAdvice) => (
-            <AdviceCard 
-              key={adviceItem.id} 
-              advice={adviceItem} 
-              onMarkCompleted={handleMarkCompleted}
-            />
-          ))}
-        </View>
-
-        {/* Empty State */}
-        {filteredAdvice.length === 0 && !isLoading && (
-          <View className="bg-white rounded-xl p-8 items-center">
-            <CheckCircle size={48} color="#10b981" />
-            <Text className="text-lg font-semibold text-gray-900 mt-4">All caught up!</Text>
-            <Text className="text-sm text-gray-600 text-center mt-2">
-              No {filter === 'all' ? 'recommendations' : filter + ' tasks'} at the moment.
+        {/* Search Results Header */}
+        {isSearching && (
+          <View className="mb-4">
+            <Text className="text-lg font-semibold text-gray-900">
+              Search Results for &ldquo;{searchQuery}&rdquo;
+            </Text>
+            <Text className="text-sm text-gray-600">
+              {searchResults.length} post{searchResults.length !== 1 ? 's' : ''} found
             </Text>
           </View>
         )}
+
+        {/* Posts List */}
+        {displayPosts.map((post) => (
+          <ForumPostCard
+            key={post.id}
+            post={post}
+            onPress={() => {
+              router.push(`/post-detail?postId=${post.id}`);
+            }}
+            onLike={() => likePost(post.id)}
+            onUnlike={() => unlikePost(post.id)}
+            showActions={true}
+          />
+        ))}
+
+        {/* Empty State */}
+        {displayPosts.length === 0 && !isLoading && (
+          <View className="bg-white rounded-xl p-8 items-center">
+            <MessageSquare size={48} color="#10b981" />
+            <Text className="text-lg font-semibold text-gray-900 mt-4">
+              {isSearching ? 'No Results Found' : 'No Posts Yet'}
+            </Text>
+            <Text className="text-sm text-gray-600 text-center mt-2">
+              {isSearching 
+                ? 'Try adjusting your search terms'
+                : 'Be the first to start a discussion in this category'
+              }
+            </Text>
+            {!isSearching && (
+              <TouchableOpacity
+                onPress={() => setShowCreatePost(true)}
+                className="bg-green-600 px-4 py-2 rounded-lg mt-4"
+              >
+                <Text className="text-white font-medium">Create First Post</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        visible={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        onSubmit={handleCreatePost}
+        isLoading={isLoading}
+      />
     </SafeAreaView>
   );
 }

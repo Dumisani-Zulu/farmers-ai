@@ -48,6 +48,8 @@ export const COLLECTIONS = {
   USER_CROPS: 'user_crops',
   USER_ACTIVITIES: 'user_activities',
   USER_PREFERENCES: 'user_preferences',
+  FORUM_POSTS: 'forum_posts',
+  FORUM_REPLIES: 'forum_replies',
 } as const;
 
 // User Profile Interface for Firestore

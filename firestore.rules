@@ -100,22 +100,22 @@ service cloud.firestore {
       allow write: if false; // Only admins can write (handle via Admin SDK)
     }
     
-    // Community/Forum data (for future implementation)
-    match /forum_topics/{topicId} {
-      // Public read access for topics
+    // Community/Forum data
+    match /forum_posts/{postId} {
+      // Public read access for posts
       allow read: if true;
       
-      // Only authenticated users can create topics
+      // Only authenticated users can create posts
       allow create: if isAuthenticated() && 
-                   request.resource.data.authorId == request.auth.uid;
+                   request.resource.data.author.uid == request.auth.uid;
       
-      // Only topic author can edit their topics
+      // Only post author can edit their posts
       allow update: if isAuthenticated() && 
-                   resource.data.authorId == request.auth.uid;
+                   resource.data.author.uid == request.auth.uid;
       
-      // Only topic author or moderators can delete
+      // Only post author can delete their posts
       allow delete: if isAuthenticated() && 
-                   resource.data.authorId == request.auth.uid;
+                   resource.data.author.uid == request.auth.uid;
     }
     
     match /forum_replies/{replyId} {
@@ -124,15 +124,15 @@ service cloud.firestore {
       
       // Only authenticated users can create replies
       allow create: if isAuthenticated() && 
-                   request.resource.data.authorId == request.auth.uid;
+                   request.resource.data.author.uid == request.auth.uid;
       
       // Only reply author can edit their replies
       allow update: if isAuthenticated() && 
-                   resource.data.authorId == request.auth.uid;
+                   resource.data.author.uid == request.auth.uid;
       
       // Only reply author can delete their replies
       allow delete: if isAuthenticated() && 
-                   resource.data.authorId == request.auth.uid;
+                   resource.data.author.uid == request.auth.uid;
     }
     
     // Default rule - deny all other access

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Cloud, Sprout, Calendar, User, Tractor } from 'lucide-react-native';
+import { Cloud, Sprout, MessageSquare, User, Tractor } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, StatusBar as RNStatusBar } from 'react-native';
@@ -70,20 +70,20 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="season-advice"
-          options={{
-            title: 'Advisor',
-            tabBarIcon: ({ size, color }) => (
-              <Calendar size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="tools"
           options={{
             title: 'Tools',
             tabBarIcon: ({ size, color }) => (
               <Tractor size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="season-advice"
+          options={{
+            title: 'Forum',
+            tabBarIcon: ({ size, color }) => (
+              <MessageSquare size={size} color={color} />
             ),
           }}
         />

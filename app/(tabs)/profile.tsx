@@ -234,7 +234,7 @@ export default function ProfileScreen() {
         }
       >
         {/* Debug Component - Remove in production */}
-        {__DEV__ && <AuthDebugComponent />}
+        {/* {__DEV__ && <AuthDebugComponent />} */}
 
         {/* Profile Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-sm">
