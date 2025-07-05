@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "farmers-ai",
     "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
@@ -14,7 +14,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.farmersweather.app"
+      "bundleIdentifier": "com.farmersweather.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,6 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.farmersweather.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
@@ -63,7 +65,17 @@
       "eas": {
         "projectId": "43f59c1e-ba4f-4d60-a658-baa83370563a"
       },
-      "googleAiApiKey": "AIzaSyBlMlw2x4wM3vpPgKLAYBnvt_ZGVplfK8o"
+      "googleAiApiKey": "AIzaSyBlMlw2x4wM3vpPgKLAYBnvt_ZGVplfK8o",
+      "firebaseApiKey": "AIzaSyAuhko0O1WKxY8tRXduIgDrRjQ5sF96DnU",
+      "firebaseAuthDomain": "farmers-ai-4c1b7.firebaseapp.com",
+      "firebaseProjectId": "farmers-ai-4c1b7",
+      "firebaseStorageBucket": "farmers-ai-4c1b7.firebasestorage.app",
+      "firebaseMessagingSenderId": "538206936930",
+      "firebaseAppId": "1:538206936930:web:45116149bbba55e3ed963b",
+      "firebaseMeasurementId": "G-SSP86XN0RD",
+      "googleOAuthClientIdWeb": "538206936930-rrmk92aurqfedcs28jc6i81b9lb4lilo.apps.googleusercontent.com",
+      "googleOAuthClientIdAndroid": "538206936930-0s5qicqf8a0at6qpqmfj4vjqksvu0jg9.apps.googleusercontent.com",
+      "googleOAuthClientIdIos": "your-ios-client-id.apps.googleusercontent.com"
     }
   }
 }

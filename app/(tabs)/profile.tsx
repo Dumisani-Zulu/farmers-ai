@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { authService } from '../../lib/auth-service';
+import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileEditModal } from '@/components/ProfileEditModal';
+import { AuthDebugComponent } from '@/components/AuthDebugComponent';
 import { 
   User, 
   MapPin, 
@@ -49,6 +50,7 @@ const MenuItem = ({ icon, title, subtitle, onPress, showArrow = true }: {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -70,6 +72,19 @@ export default function ProfileScreen() {
     lastActive: string;
   } | null>(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Profile Debug Info:');
+    console.log('- user from auth:', user);
+    console.log('- profile from hook:', profile);
+    console.log('- isAuthenticated:', isAuthenticated);
+    console.log('- isLoading:', isLoading);
+    console.log('- error:', error);
+  }, [user, profile, isAuthenticated, isLoading, error]);
+
+  // Use profile data if available, otherwise fall back to auth user
+  const displayData = profile || (user as any);
+
   useEffect(() => {
     const loadStats = async () => {
       try {
@@ -80,10 +95,10 @@ export default function ProfileScreen() {
       }
     };
 
-    if (profile) {
+    if (displayData) {
       loadStats();
     }
-  }, [profile, getProfileStats]);
+  }, [displayData, getProfileStats]);
 
   const refreshStats = async () => {
     try {
@@ -120,7 +135,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await authService.signOut();
+              await signOut();
               router.replace('/welcome');
             } catch (err) {
               console.error('Sign out error:', err);
@@ -194,11 +209,17 @@ export default function ProfileScreen() {
     );
   }
 
-  if (!profile) {
+  if (!displayData) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-600">No profile data available</Text>
+          <TouchableOpacity
+            onPress={() => router.replace('/auth')}
+            className="bg-green-600 px-6 py-3 rounded-lg mt-4"
+          >
+            <Text className="text-white font-medium">Sign In</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -212,6 +233,9 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
+        {/* Debug Component - Remove in production */}
+        {__DEV__ && <AuthDebugComponent />}
+
         {/* Profile Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-sm">
           <View className="flex-row items-center justify-between mb-4">
@@ -232,23 +256,27 @@ export default function ProfileScreen() {
             </View>
             
             <Text className="text-2xl font-bold text-gray-900 mb-1">
-              {profile.fullName || 'Unknown User'}
+              {displayData?.displayName || displayData?.fullName || displayData?.farmName || 'Unknown User'}
             </Text>
             
             <Text className="text-sm text-gray-600 mb-2">
-              {profile.farmName || 'No farm name'}
+              {displayData?.email || 'No email'}
             </Text>
             
-            {profile.bio && (
+            <Text className="text-sm text-gray-600 mb-2">
+              {displayData?.farmName || 'No farm name'}
+            </Text>
+            
+            {displayData?.bio && (
               <Text className="text-sm text-gray-600 text-center mb-4">
-                {profile.bio}
+                {displayData.bio}
               </Text>
             )}
             
             <View className="flex-row items-center mb-4">
               <MapPin size={16} color="#6b7280" />
               <Text className="text-sm text-gray-600 ml-1">
-                {profile.location || 'No location set'}
+                {displayData?.location || 'No location set'}
               </Text>
             </View>
             
@@ -292,29 +320,29 @@ export default function ProfileScreen() {
           <View className="space-y-3">
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Farm Size</Text>
-              <Text className="text-gray-900">{profile.farmSize || 'Not specified'}</Text>
+              <Text className="text-gray-900">{displayData?.farmSize || 'Not specified'}</Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Farming Method</Text>
               <Text className="text-gray-900 capitalize">
-                {profile.farmingMethod || 'Not specified'}
+                {displayData?.farmingMethod || 'Not specified'}
               </Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Soil Type</Text>
-              <Text className="text-gray-900">{profile.soilType || 'Not specified'}</Text>
+              <Text className="text-gray-900">{displayData?.soilType || 'Not specified'}</Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Water Source</Text>
-              <Text className="text-gray-900">{profile.waterSource || 'Not specified'}</Text>
+              <Text className="text-gray-900">{displayData?.waterSource || 'Not specified'}</Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Experience</Text>
-              <Text className="text-gray-900">{getExperienceLevel(profile.experience)}</Text>
+              <Text className="text-gray-900">{getExperienceLevel(displayData?.experience)}</Text>
             </View>
           </View>
         </View>
@@ -325,13 +353,13 @@ export default function ProfileScreen() {
           <View className="space-y-3">
             <View className="flex-row items-center">
               <Mail size={20} color="#6b7280" />
-              <Text className="text-gray-700 ml-3">{profile.email}</Text>
+              <Text className="text-gray-700 ml-3">{displayData?.email}</Text>
             </View>
             
-            {profile.phone && (
+            {displayData?.phone && (
               <View className="flex-row items-center">
                 <Phone size={20} color="#6b7280" />
-                <Text className="text-gray-700 ml-3">{profile.phone}</Text>
+                <Text className="text-gray-700 ml-3">{displayData.phone}</Text>
               </View>
             )}
           </View>
@@ -344,24 +372,24 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Member Since</Text>
               <Text className="text-gray-900">
-                {formatDate(profile.createdAt)}
+                {displayData?.createdAt ? formatDate(displayData.createdAt) : 'N/A'}
               </Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Last Login</Text>
               <Text className="text-gray-900">
-                {formatDate(profile.lastLogin)}
+                {displayData?.lastLogin ? formatDate(displayData.lastLogin) : 'N/A'}
               </Text>
             </View>
             
             <View className="flex-row justify-between">
               <Text className="text-gray-600">Language</Text>
               <Text className="text-gray-900">
-                {profile.language === 'en' ? 'English' : 
-                 profile.language === 'sw' ? 'Swahili' : 
-                 profile.language === 'fr' ? 'French' : 
-                 profile.language === 'es' ? 'Spanish' : 'English'}
+                {displayData?.language === 'en' ? 'English' : 
+                 displayData?.language === 'sw' ? 'Swahili' : 
+                 displayData?.language === 'fr' ? 'French' : 
+                 displayData?.language === 'es' ? 'Spanish' : 'English'}
               </Text>
             </View>
           </View>

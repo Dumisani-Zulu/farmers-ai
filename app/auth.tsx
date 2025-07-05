@@ -9,13 +9,13 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { authService } from '../lib/auth-service';
+import { authService, AuthState } from '../lib/auth-service';
 
 interface FormData {
   email: string;
@@ -31,6 +31,7 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -39,26 +40,25 @@ export default function AuthScreen() {
     location: '',
   });
 
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      const isAuthenticated = await AsyncStorage.getItem('is_authenticated');
-      const hasConsent = await AsyncStorage.getItem('consent_given');
-      
-      if (isAuthenticated === 'true') {
-        if (hasConsent === 'true') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/consent');
-        }
+  const handleAuthStateChange = useCallback((authState: AuthState) => {
+    setAuthLoading(authState.loading);
+    
+    if (!authState.loading && authState.isAuthenticated) {
+      if (authState.hasConsent) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/consent');
       }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
     }
   }, [router]);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    authService.addAuthStateListener(handleAuthStateChange);
+    
+    return () => {
+      authService.removeAuthStateListener(handleAuthStateChange);
+    };
+  }, [handleAuthStateChange]);
 
   const validateForm = (): boolean => {
     if (!formData.email.trim()) {
@@ -100,36 +100,21 @@ export default function AuthScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      // Simulate Google sign-in process
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock Google user data
-      const googleUser = {
-        email: 'user@gmail.com',
-        name: 'Google User',
-        farmName: 'Google Farm',
-      };
-
-      const success = await authService.signUp(
-        googleUser.email,
-        'google_auth_token',
-        googleUser.farmName,
-        ''
-      );
-
-      if (success) {
-        const hasConsent = await AsyncStorage.getItem('consent_given');
-        if (hasConsent === 'true') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/consent');
-        }
-      } else {
-        Alert.alert('Error', 'Google sign-in failed. Please try again.');
-      }
-    } catch (error) {
+      await authService.signInWithGoogle();
+    } catch (error: any) {
       console.error('Google sign-in error:', error);
-      Alert.alert('Error', 'Google sign-in failed. Please try again.');
+      
+      let errorMessage = 'Google sign-in failed. Please try again.';
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Sign-in was cancelled. Please try again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -141,41 +126,88 @@ export default function AuthScreen() {
     setLoading(true);
     
     try {
-      let success = false;
-      
       if (isLogin) {
-        success = await authService.signIn(formData.email, formData.password);
+        await authService.signIn(formData.email, formData.password);
       } else {
-        success = await authService.signUp(
+        await authService.signUp(
           formData.email,
           formData.password,
           formData.farmName || '',
           formData.location
         );
       }
-
-      if (success) {
-        const hasConsent = await AsyncStorage.getItem('consent_given');
-        
-        if (hasConsent === 'true') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/consent');
-        }
-      } else {
-        Alert.alert('Error', 'Authentication failed. Please try again.');
-      }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
-      Alert.alert('Error', 'Authentication failed. Please try again.');
+      
+      let errorMessage = 'Authentication failed. Please try again.';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email. Please sign up first.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please try again.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address. Please check and try again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email.trim()) {
+      Alert.alert('Error', 'Please enter your email address first.');
+      return;
+    }
+
+    try {
+      await authService.resetPassword(formData.email);
+      Alert.alert(
+        'Success', 
+        'Password reset email sent! Please check your inbox and follow the instructions to reset your password.',
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      let errorMessage = 'Failed to send password reset email. Please try again.';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address. Please check and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     }
   };
 
   const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Show loading screen while checking auth state
+  if (authLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#22c55e" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -355,7 +387,10 @@ export default function AuthScreen() {
 
               {/* Forgot Password */}
               {isLogin && (
-                <TouchableOpacity style={styles.forgotPassword}>
+                <TouchableOpacity 
+                  style={styles.forgotPassword}
+                  onPress={handleForgotPassword}
+                >
                   <Text style={styles.forgotPasswordText}>Forgot password?</Text>
                 </TouchableOpacity>
               )}
@@ -399,6 +434,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6b7280',
   },
   gradient: {
     flex: 1,
