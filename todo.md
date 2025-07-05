@@ -12,7 +12,9 @@
 - ✅ implement email auth
 - implement google auth
 - ✅ update profile to read from Auth
-- add client information form and table
+- ✅ add client information form and table
+- ✅ create Firestore database tables for user information
+- ⚠️ SETUP REQUIRED: Apply Firestore security rules (see FIRESTORE_RULES_SETUP.md)
 
 ### Forum
 - community chat and discussion

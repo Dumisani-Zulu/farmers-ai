@@ -257,7 +257,7 @@ export default function AuthScreen() {
             {/* Form */}
             <View style={styles.form}>
               {/* Google Sign In Button */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[styles.googleButton, loading && styles.buttonDisabled]}
                 onPress={handleGoogleSignIn}
                 disabled={loading}
@@ -268,14 +268,14 @@ export default function AuthScreen() {
                   </View>
                   <Text style={styles.googleButtonText}>Continue with Google</Text>
                 </View>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* Divider */}
-              <View style={styles.divider}>
+              {/* <View style={styles.divider}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>or</Text>
                 <View style={styles.dividerLine} />
-              </View>
+              </View> */}
 
               {/* Email Input */}
               <View style={styles.inputGroup}>

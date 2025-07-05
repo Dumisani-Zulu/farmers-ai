@@ -280,13 +280,23 @@ export default function ProfileScreen() {
               </Text>
             </View>
             
-            <TouchableOpacity 
-              className="bg-green-600 px-6 py-2 rounded-lg flex-row items-center"
-              onPress={() => setShowEditModal(true)}
-            >
-              <Edit size={16} color="white" />
-              <Text className="text-white font-medium ml-2">Edit Profile</Text>
-            </TouchableOpacity>
+            <View className="flex-row space-x-2 mb-4">
+              <TouchableOpacity 
+                className="bg-green-600 px-4 py-2 rounded-lg flex-row items-center flex-1"
+                onPress={() => setShowEditModal(true)}
+              >
+                <Edit size={16} color="white" />
+                <Text className="text-white font-medium ml-2">Edit Profile</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                className="bg-blue-600 px-4 py-2 rounded-lg flex-row items-center flex-1"
+                onPress={() => router.push('/user-info')}
+              >
+                <User size={16} color="white" />
+                <Text className="text-white font-medium ml-2">View Details</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 

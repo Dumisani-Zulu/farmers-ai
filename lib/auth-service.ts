@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase-config';
+import { FirestoreService, FirestoreUserProfile, DEFAULT_USER_PREFERENCES } from './firestore-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -97,9 +98,28 @@ class AuthService {
   private async getUserProfile(uid: string): Promise<UserProfile | null> {
     try {
       console.log('📖 Attempting to get user profile for uid:', uid);
+      
+      // Try to get from new Firestore service first
+      const firestoreProfile = await FirestoreService.getUserProfile(uid);
+      if (firestoreProfile) {
+        console.log('✅ User profile found in Firestore (new structure)');
+        // Convert Firestore profile to UserProfile format
+        return {
+          uid: firestoreProfile.uid,
+          email: firestoreProfile.email,
+          displayName: firestoreProfile.displayName,
+          photoURL: firestoreProfile.photoURL,
+          farmName: firestoreProfile.fullName, // Temporary mapping
+          location: firestoreProfile.city || firestoreProfile.address,
+          createdAt: firestoreProfile.createdAt.toDate().toISOString(),
+          lastLogin: firestoreProfile.lastLoginAt.toDate().toISOString(),
+        };
+      }
+      
+      // Fallback to old structure
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
-        console.log('✅ User profile found in Firestore');
+        console.log('✅ User profile found in Firestore (old structure)');
         return userDoc.data() as UserProfile;
       } else {
         console.log('❌ No user profile found in Firestore');
@@ -115,7 +135,33 @@ class AuthService {
   private async saveUserProfile(userProfile: UserProfile): Promise<void> {
     try {
       console.log('💾 Saving user profile to Firestore for uid:', userProfile.uid);
+      
+      // Create comprehensive Firestore profile
+      const firestoreProfile: Omit<FirestoreUserProfile, 'createdAt' | 'updatedAt' | 'lastLoginAt' | 'lastActiveAt'> = {
+        uid: userProfile.uid,
+        email: userProfile.email,
+        displayName: userProfile.displayName,
+        photoURL: userProfile.photoURL,
+        fullName: userProfile.displayName || userProfile.farmName,
+        language: 'en',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        accountStatus: 'active',
+        emailVerified: false,
+        phoneVerified: false,
+      };
+      
+      // Save to new Firestore structure
+      await FirestoreService.createUserProfile(firestoreProfile);
+      
+      // Create default preferences
+      await FirestoreService.createUserPreferences({
+        userId: userProfile.uid,
+        ...DEFAULT_USER_PREFERENCES,
+      });
+      
+      // Also save to old structure for backward compatibility
       await setDoc(doc(db, 'users', userProfile.uid), userProfile);
+      
       console.log('✅ User profile saved successfully');
     } catch (error) {
       console.error('❌ Error saving user profile to Firestore:', error);
