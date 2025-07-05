@@ -9,8 +9,9 @@
 - at least 3 months weather information advice 
 
 ### Auth
-- implement full auth
-- update profile to read from Auth
+- ✅ implement email auth
+- implement google auth
+- ✅ update profile to read from Auth
 - add client information form and table
 
 ### Forum
