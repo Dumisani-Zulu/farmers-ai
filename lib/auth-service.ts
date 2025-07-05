@@ -385,11 +385,49 @@ class AuthService {
 
   private async updateLastLogin(uid: string): Promise<void> {
     try {
-      await updateDoc(doc(db, 'users', uid), {
-        lastLogin: new Date().toISOString(),
-      });
+      // Try to update the user profile in the correct collection
+      const userProfileRef = doc(db, 'user_profiles', uid);
+      
+      // Check if the document exists first
+      const userProfileDoc = await getDoc(userProfileRef);
+      
+      if (userProfileDoc.exists()) {
+        // Update existing profile
+        await updateDoc(userProfileRef, {
+          lastLoginAt: new Date().toISOString(),
+          lastActiveAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        console.log('✅ Updated last login for user:', uid);
+      } else {
+        // Document doesn't exist, create a minimal user profile
+        console.log('📝 Creating user profile for login update:', uid);
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          const minimalProfile = {
+            uid: uid,
+            email: currentUser.email || '',
+            displayName: currentUser.displayName || undefined,
+            photoURL: currentUser.photoURL || undefined,
+            fullName: currentUser.displayName || currentUser.email?.split('@')[0] || '',
+            language: 'en',
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            accountStatus: 'active',
+            emailVerified: currentUser.emailVerified || false,
+            phoneVerified: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+            lastActiveAt: new Date().toISOString(),
+          };
+          
+          await setDoc(userProfileRef, minimalProfile);
+          console.log('✅ Created user profile with login info for:', uid);
+        }
+      }
     } catch (error) {
       console.error('Error updating last login:', error);
+      // Don't throw the error to prevent login failures
     }
   }
 

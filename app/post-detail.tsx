@@ -77,7 +77,7 @@ export default function PostDetailScreen() {
         <View className="flex-1 items-center justify-center p-4">
           <Text className="text-lg font-semibold text-gray-900 mb-2">Post Not Found</Text>
           <Text className="text-gray-600 text-center mb-4">
-            The post you're looking for doesn't exist or has been removed.
+            The post you are looking for does not exist or has been removed.
           </Text>
           <TouchableOpacity
             onPress={() => router.back()}
