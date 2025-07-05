@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "538206936930",
+    "project_id": "farmers-ai-4c1b7",
+    "storage_bucket": "farmers-ai-4c1b7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538206936930:android:45116149bbba55e3ed963b",
+        "android_client_info": {
+          "package_name": "com.farmersweather.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "538206936930-0s5qicqf8a0at6qpqmfj4vjqksvu0jg9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.farmersweather.app",
+            "certificate_hash": "sha1_hash_placeholder"
+          }
+        },
+        {
+          "client_id": "538206936930-rrmk92aurqfedcs28jc6i81b9lb4lilo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuhko0O1WKxY8tRXduIgDrRjQ5sF96DnU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "538206936930-rrmk92aurqfedcs28jc6i81b9lb4lilo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
