@@ -32,6 +32,7 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -60,41 +61,101 @@ export default function AuthScreen() {
     };
   }, [handleAuthStateChange]);
 
+  const showErrorAlert = (title: string, message: string) => {
+    Alert.alert(
+      title,
+      message,
+      [{ text: 'OK', style: 'default' }],
+      { 
+        cancelable: true,
+        userInterfaceStyle: 'light'
+      }
+    );
+  };
+
   const validateForm = (): boolean => {
+    const errors: {[key: string]: boolean} = {};
+    let isValid = true;
+
+    // Check for empty email
     if (!formData.email.trim()) {
-      Alert.alert('Error', 'Email is required');
+      errors.email = true;
+      isValid = false;
+      showErrorAlert('❌ Missing Email', 'Please enter your email address to continue.');
+      setFieldErrors(errors);
       return false;
     }
 
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    if (!emailRegex.test(formData.email.trim())) {
+      errors.email = true;
+      isValid = false;
+      showErrorAlert('❌ Invalid Email', 'Please enter a valid email address (e.g., user@example.com).');
+      setFieldErrors(errors);
       return false;
     }
 
+    // Check for empty password
     if (!formData.password.trim()) {
-      Alert.alert('Error', 'Password is required');
+      errors.password = true;
+      isValid = false;
+      showErrorAlert('❌ Missing Password', 'Please enter your password to continue.');
+      setFieldErrors(errors);
       return false;
     }
 
+    // Validate password length
     if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      errors.password = true;
+      isValid = false;
+      showErrorAlert('❌ Weak Password', 'Password must be at least 6 characters long for security.');
+      setFieldErrors(errors);
       return false;
     }
 
+    // Additional validation for sign up
     if (!isLogin) {
-      if (formData.password !== formData.confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
+      // Check password confirmation
+      if (!formData.confirmPassword?.trim()) {
+        errors.confirmPassword = true;
+        isValid = false;
+        showErrorAlert('❌ Missing Confirmation', 'Please confirm your password.');
+        setFieldErrors(errors);
         return false;
       }
 
+      if (formData.password !== formData.confirmPassword) {
+        errors.password = true;
+        errors.confirmPassword = true;
+        isValid = false;
+        showErrorAlert('❌ Password Mismatch', 'Passwords do not match. Please check and try again.');
+        setFieldErrors(errors);
+        return false;
+      }
+
+      // Check farm name
       if (!formData.farmName?.trim()) {
-        Alert.alert('Error', 'Farm name is required');
+        errors.farmName = true;
+        isValid = false;
+        showErrorAlert('❌ Missing Farm Name', 'Please enter your farm name to create your account.');
+        setFieldErrors(errors);
+        return false;
+      }
+
+      // Validate farm name length
+      if (formData.farmName.trim().length < 2) {
+        errors.farmName = true;
+        isValid = false;
+        showErrorAlert('❌ Invalid Farm Name', 'Farm name must be at least 2 characters long.');
+        setFieldErrors(errors);
         return false;
       }
     }
 
-    return true;
+    // Clear any previous errors if validation passes
+    setFieldErrors({});
+    return isValid;
   };
 
   const handleGoogleSignIn = async () => {
@@ -104,17 +165,23 @@ export default function AuthScreen() {
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       
-      let errorMessage = 'Google sign-in failed. Please try again.';
+      let errorTitle = '❌ Google Sign-In Failed';
+      let errorMessage = 'Unable to sign in with Google. Please try again.';
       
       if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in was cancelled. Please try again.';
+        errorTitle = '⚠️ Sign-In Cancelled';
+        errorMessage = 'You cancelled the Google sign-in process. Please try again when ready.';
       } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection and try again.';
+        errorTitle = '🌐 Network Error';
+        errorMessage = 'Please check your internet connection and try again.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorTitle = '❌ Account Conflict';
+        errorMessage = 'An account with this email already exists. Please sign in with your original method.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      showErrorAlert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }
@@ -139,25 +206,58 @@ export default function AuthScreen() {
     } catch (error: any) {
       console.error('Auth error:', error);
       
-      let errorMessage = 'Authentication failed. Please try again.';
+      let errorTitle = '❌ Authentication Failed';
+      let errorMessage = 'Unable to authenticate. Please try again.';
       
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email. Please sign up first.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-      } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists. Please sign in instead.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address. Please check and try again.';
+      // Sign in specific errors
+      if (isLogin) {
+        if (error.code === 'auth/user-not-found') {
+          errorTitle = '❌ Account Not Found';
+          errorMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
+        } else if (error.code === 'auth/wrong-password') {
+          errorTitle = '❌ Incorrect Password';
+          errorMessage = 'The password you entered is incorrect. Please try again or reset your password.';
+        } else if (error.code === 'auth/invalid-credential') {
+          errorTitle = '❌ Invalid Credentials';
+          errorMessage = 'The email or password you entered is incorrect. Please check and try again.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorTitle = '⚠️ Too Many Attempts';
+          errorMessage = 'Too many failed sign-in attempts. Please wait a few minutes before trying again.';
+        } else if (error.code === 'auth/user-disabled') {
+          errorTitle = '❌ Account Disabled';
+          errorMessage = 'This account has been disabled. Please contact support for assistance.';
+        }
+      } 
+      // Sign up specific errors
+      else {
+        if (error.code === 'auth/email-already-in-use') {
+          errorTitle = '❌ Email Already Registered';
+          errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
+        } else if (error.code === 'auth/weak-password') {
+          errorTitle = '❌ Weak Password';
+          errorMessage = 'Password is too weak. Please choose a stronger password with at least 6 characters.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorTitle = '❌ Registration Disabled';
+          errorMessage = 'Account registration is currently disabled. Please try again later.';
+        }
+      }
+      
+      // Common errors for both sign in and sign up
+      if (error.code === 'auth/invalid-email') {
+        errorTitle = '❌ Invalid Email';
+        errorMessage = 'The email address format is invalid. Please check and try again.';
       } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (error.message) {
+        errorTitle = '🌐 Network Error';
+        errorMessage = 'Network connection failed. Please check your internet connection and try again.';
+      } else if (error.code === 'auth/timeout') {
+        errorTitle = '⏱️ Request Timeout';
+        errorMessage = 'The request timed out. Please check your connection and try again.';
+      } else if (error.message && !errorTitle.includes('Authentication Failed')) {
+        // Use custom error message if we haven't set a specific title
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      showErrorAlert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }
@@ -165,31 +265,48 @@ export default function AuthScreen() {
 
   const handleForgotPassword = async () => {
     if (!formData.email.trim()) {
-      Alert.alert('Error', 'Please enter your email address first.');
+      showErrorAlert('❌ Email Required', 'Please enter your email address first to reset your password.');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      showErrorAlert('❌ Invalid Email', 'Please enter a valid email address to receive password reset instructions.');
       return;
     }
 
     try {
       await authService.resetPassword(formData.email);
       Alert.alert(
-        'Success', 
-        'Password reset email sent! Please check your inbox and follow the instructions to reset your password.',
-        [{ text: 'OK' }]
+        '✅ Reset Email Sent', 
+        'Password reset instructions have been sent to your email. Please check your inbox and follow the instructions to reset your password.',
+        [{ text: 'OK', style: 'default' }],
+        { cancelable: true }
       );
     } catch (error: any) {
       console.error('Password reset error:', error);
       
-      let errorMessage = 'Failed to send password reset email. Please try again.';
+      let errorTitle = '❌ Reset Failed';
+      let errorMessage = 'Unable to send password reset email. Please try again.';
       
       if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
+        errorTitle = '❌ Account Not Found';
+        errorMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address. Please check and try again.';
+        errorTitle = '❌ Invalid Email';
+        errorMessage = 'The email address format is invalid. Please check and try again.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorTitle = '⚠️ Too Many Requests';
+        errorMessage = 'Too many password reset attempts. Please wait a few minutes before trying again.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorTitle = '🌐 Network Error';
+        errorMessage = 'Network connection failed. Please check your internet connection and try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      showErrorAlert(errorTitle, errorMessage);
     }
   };
 
@@ -238,7 +355,10 @@ export default function AuthScreen() {
             <View style={styles.toggleContainer}>
               <TouchableOpacity
                 style={[styles.toggleButton, isLogin && styles.toggleButtonActive]}
-                onPress={() => setIsLogin(true)}
+                onPress={() => {
+                  setIsLogin(true);
+                  setFieldErrors({}); // Clear errors when switching modes
+                }}
               >
                 <Text style={[styles.toggleText, isLogin && styles.toggleTextActive]}>
                   Sign In
@@ -246,7 +366,10 @@ export default function AuthScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.toggleButton, !isLogin && styles.toggleButtonActive]}
-                onPress={() => setIsLogin(false)}
+                onPress={() => {
+                  setIsLogin(false);
+                  setFieldErrors({}); // Clear errors when switching modes
+                }}
               >
                 <Text style={[styles.toggleText, !isLogin && styles.toggleTextActive]}>
                   Sign Up
@@ -280,14 +403,20 @@ export default function AuthScreen() {
               {/* Email Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Email</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, fieldErrors.email && styles.inputError]}>
                   <Ionicons name="mail-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your email"
                     placeholderTextColor="#9ca3af"
                     value={formData.email}
-                    onChangeText={(text) => updateFormData('email', text)}
+                    onChangeText={(text) => {
+                      updateFormData('email', text);
+                      // Clear error when user starts typing
+                      if (fieldErrors.email) {
+                        setFieldErrors(prev => ({ ...prev, email: false }));
+                      }
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -298,14 +427,20 @@ export default function AuthScreen() {
               {/* Password Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, fieldErrors.password && styles.inputError]}>
                   <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your password"
                     placeholderTextColor="#9ca3af"
                     value={formData.password}
-                    onChangeText={(text) => updateFormData('password', text)}
+                    onChangeText={(text) => {
+                      updateFormData('password', text);
+                      // Clear error when user starts typing
+                      if (fieldErrors.password) {
+                        setFieldErrors(prev => ({ ...prev, password: false }));
+                      }
+                    }}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -328,14 +463,20 @@ export default function AuthScreen() {
                 <>
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Confirm Password</Text>
-                    <View style={styles.inputContainer}>
+                    <View style={[styles.inputContainer, fieldErrors.confirmPassword && styles.inputError]}>
                       <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
                       <TextInput
                         style={styles.input}
                         placeholder="Confirm your password"
                         placeholderTextColor="#9ca3af"
                         value={formData.confirmPassword || ''}
-                        onChangeText={(text) => updateFormData('confirmPassword', text)}
+                        onChangeText={(text) => {
+                          updateFormData('confirmPassword', text);
+                          // Clear error when user starts typing
+                          if (fieldErrors.confirmPassword) {
+                            setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
+                          }
+                        }}
                         secureTextEntry={!showConfirmPassword}
                         autoCapitalize="none"
                         autoCorrect={false}
@@ -355,14 +496,20 @@ export default function AuthScreen() {
 
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Farm Name</Text>
-                    <View style={styles.inputContainer}>
+                    <View style={[styles.inputContainer, fieldErrors.farmName && styles.inputError]}>
                       <Ionicons name="business-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
                       <TextInput
                         style={styles.input}
                         placeholder="Enter your farm name"
                         placeholderTextColor="#9ca3af"
                         value={formData.farmName || ''}
-                        onChangeText={(text) => updateFormData('farmName', text)}
+                        onChangeText={(text) => {
+                          updateFormData('farmName', text);
+                          // Clear error when user starts typing
+                          if (fieldErrors.farmName) {
+                            setFieldErrors(prev => ({ ...prev, farmName: false }));
+                          }
+                        }}
                         autoCapitalize="words"
                       />
                     </View>
@@ -587,6 +734,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#ffffff',
     minHeight: 48,
+  },
+  inputError: {
+    borderColor: '#ef4444',
+    borderWidth: 2,
+    backgroundColor: '#fef2f2',
   },
   inputIcon: {
     marginRight: 12,
