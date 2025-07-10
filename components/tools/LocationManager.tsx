@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapPin, Navigation, Settings, ArrowLeft } from 'lucide-react-native';
-import LocationSearch from '../components/LocationSearch';
-import { useLocation } from '../hooks/useLocation';
-import { LocationData } from '../lib/location-service';
+import LocationSearch from '../LocationSearch';
+import { useLocation } from '../../hooks/useLocation';
+import { LocationData } from '../../lib/location-service';
+import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
 
 interface LocationManagerProps {
   onBack: () => void;

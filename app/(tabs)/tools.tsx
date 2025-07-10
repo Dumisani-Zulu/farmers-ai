@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -17,12 +17,11 @@ import {
   Zap,
   TestTube
 } from 'lucide-react-native';
-import PlantDiseaseIdentifier from '../../components/PlantDiseaseIdentifier';
-import PestIdentifier from '../../components/PestIdentifier';
-import WeedIdentifier from '../../components/WeedIdentifier';
-import AISoilAnalyzer from '../../components/AISoilAnalyzer';
-// import TestPlantDiseaseAI from '../../components/TestPlantDiseaseAI';
-import LocationManager from '../../components/LocationManager';
+import PlantDiseaseIdentifier from '../../components/tools/PlantDiseaseIdentifier';
+import PestIdentifier from '../../components/tools/PestIdentifier';
+import WeedIdentifier from '../../components/tools/WeedIdentifier';
+import AISoilAnalyzer from '../../components/tools/AISoilAnalyzer';
+import LocationManager from '../../components/tools/LocationManager';
 
 interface Tool {
   id: string;
@@ -212,8 +211,8 @@ const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => 
 };
 
 export default function ToolsScreen() {
-  const [selectedCategory, setSelectedCategory] = React.useState('all');
-  const [currentScreen, setCurrentScreen] = React.useState<ToolScreen>('main');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [currentScreen, setCurrentScreen] = useState<ToolScreen>('main');
 
   const filteredTools = selectedCategory === 'all' 
     ? tools 

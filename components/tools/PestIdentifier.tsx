@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info, Bug } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { agriculturalAITools, PestResult } from '../lib/agricultural-ai-tools';
+import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
 
 interface PestIdentifierProps {
   onBack: () => void;
@@ -12,6 +12,15 @@ interface PestIdentifierProps {
 const PestIdentifier: React.FC<PestIdentifierProps> = ({ onBack }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  // Define the PestResult interface
+  interface PestResult {
+    pest: string;
+    severity: 'low' | 'medium' | 'high';
+    confidence: number;
+    description: string;
+    treatment: string;
+  }
+  
   const [result, setResult] = useState<PestResult | null>(null);
 
   const requestPermissions = async () => {

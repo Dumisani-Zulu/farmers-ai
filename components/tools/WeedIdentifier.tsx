@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info, Zap } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { agriculturalAITools, WeedResult } from '../lib/agricultural-ai-tools';
+import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
 
 interface WeedIdentifierProps {
   onBack: () => void;
@@ -12,6 +12,15 @@ interface WeedIdentifierProps {
 const WeedIdentifier: React.FC<WeedIdentifierProps> = ({ onBack }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  // Define the WeedResult interface
+  interface WeedResult {
+    weed: string;
+    invasiveness: string;
+    confidence: number;
+    description: string;
+    treatment: string;
+  }
+  
   const [result, setResult] = useState<WeedResult | null>(null);
 
   const requestPermissions = async () => {

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, TestTube, Droplets, TrendingUp, Activity } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { agriculturalAITools, SoilAnalysisResult } from '../lib/agricultural-ai-tools';
+import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
 
 interface AISoilAnalyzerProps {
   onBack: () => void;
@@ -12,6 +12,16 @@ interface AISoilAnalyzerProps {
 const AISoilAnalyzer: React.FC<AISoilAnalyzerProps> = ({ onBack }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  // Define the SoilAnalysisResult type
+  interface SoilAnalysisResult {
+    soilType: string;
+    confidence: number;
+    pH: number;
+    fertility: string;
+    moisture: string;
+    recommendations: string[];
+  }
+  
   const [result, setResult] = useState<SoilAnalysisResult | null>(null);
 
   const requestPermissions = async () => {

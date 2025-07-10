@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { agriculturalAITools, PlantDiseaseResult } from '../lib/agricultural-ai-tools';
+import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
 
 interface PlantDiseaseIdentifierProps {
   onBack: () => void;
@@ -12,6 +12,15 @@ interface PlantDiseaseIdentifierProps {
 const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  // Define the PlantDiseaseResult interface
+  interface PlantDiseaseResult {
+    disease: string;
+    confidence: number;
+    description: string;
+    treatment: string;
+    severity: 'low' | 'medium' | 'high';
+  }
+  
   const [result, setResult] = useState<PlantDiseaseResult | null>(null);
 
   const requestPermissions = async () => {
