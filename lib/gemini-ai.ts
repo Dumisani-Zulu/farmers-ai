@@ -35,7 +35,8 @@ class GeminiAIService {
       }
 
       this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      // Use gemini-1.5-pro for better vision capabilities
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
       
       this.isInitialized = true;
       console.log('✅ Gemini AI initialized successfully');
@@ -426,25 +427,65 @@ Focus on practical, regionally appropriate crops that farmers can realistically 
     }
 
     try {
-      // For React Native, we need to handle image differently
-      // Since we can't directly access the image file, we'll use a text-based approach
-      // In production, you would convert the image to base64 and use Gemini's vision model
+      console.log('🖼️ Starting real image analysis with Gemini Vision...');
+      console.log('📊 Image URI length:', imageUri.length);
+      console.log('📝 Prompt length:', prompt.length);
       
-      console.log('🖼️ Image analysis requested for:', imageUri);
-      console.log('📝 Using text-based analysis approach...');
+      // Extract base64 data from data URI
+      let base64Data = '';
+      let mimeType = 'image/jpeg';
       
-      const analysisPrompt = `${prompt}
+      if (imageUri.startsWith('data:')) {
+        // Handle data URI format: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...
+        const [mimeTypePart, base64Part] = imageUri.split(',');
+        if (!mimeTypePart || !base64Part) {
+          throw new Error('Invalid data URI format');
+        }
+        mimeType = mimeTypePart.split(':')[1].split(';')[0];
+        base64Data = base64Part;
+        console.log('📷 Image format:', mimeType);
+        console.log('📊 Base64 data length:', base64Data.length);
+      } else {
+        throw new Error('Image URI must be in data URI format (data:image/jpeg;base64,...)');
+      }
 
-Note: This is a simulation of image analysis. In a production environment, the actual image would be processed by Gemini's vision capabilities. Please provide a realistic and detailed analysis based on agricultural expertise and common scenarios for the requested analysis type.
+      // Validate base64 data
+      if (base64Data.length < 100) {
+        throw new Error('Base64 data appears to be too short - possible corruption');
+      }
 
-Generate a professional, detailed response that would be typical for the agricultural analysis being requested.`;
+      // Create the image part for Gemini
+      const imagePart = {
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType
+        }
+      };
 
-      const result = await this.model.generateContent(analysisPrompt);
+      console.log('📤 Sending image to Gemini Vision API...');
+      console.log('🔍 Using model:', this.model);
+      
+      // Send both the prompt and the image to Gemini
+      const result = await this.model.generateContent([prompt, imagePart]);
       const response = await result.response;
-      return response.text();
+      const analysisResult = response.text();
+      
+      console.log('✅ Gemini Vision analysis completed successfully');
+      console.log('📊 Response length:', analysisResult.length);
+      console.log('📝 Response preview:', analysisResult.substring(0, 200) + '...');
+      
+      return analysisResult;
       
     } catch (error) {
-      console.error('Failed to analyze image with Gemini:', error);
+      console.error('❌ Failed to analyze image with Gemini Vision:', error);
+      console.error('❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+      
+      // Log additional error details if available
+      if (error && typeof error === 'object' && 'status' in error) {
+        console.error('❌ HTTP Status:', (error as any).status);
+      }
+      
       throw new Error(`Gemini AI image analysis error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

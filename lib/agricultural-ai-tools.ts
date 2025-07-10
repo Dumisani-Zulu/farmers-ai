@@ -1,4 +1,5 @@
 import { geminiAI } from './gemini-ai';
+import { z } from 'zod';
 
 export interface PlantDiseaseResult {
   disease: string;
@@ -32,6 +33,26 @@ export interface SoilAnalysisResult {
   recommendations: string[];
   confidence: number;
 }
+
+const DiagnosePlantDiseaseInputSchema = z.object({
+  photoDataUri: z
+    .string()
+    .describe(
+      "A photo of a plant leaf, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'.",
+    ),
+  language: z.string().optional().describe("The target language for the output (e.g., 'Nyanja', 'Bemba'). If not provided, English will be used."),
+});
+export type DiagnosePlantDiseaseInput = z.infer<typeof DiagnosePlantDiseaseInputSchema>;
+
+const DiagnosePlantDiseaseOutputSchema = z.object({
+  plantName: z.string().describe("The common name of the plant identified in the image."),
+  isHealthy: z.boolean().describe("A boolean indicating if the plant appears to be healthy."),
+  disease: z.string().describe("The name of the disease identified. If the plant is healthy, this should be 'None'."),
+  confidence: z.enum(["High", "Medium", "Low"]).describe("The model's confidence in its diagnosis."),
+  diagnosis: z.string().describe("A detailed diagnosis of the plant's condition in markdown format. It should describe the symptoms seen in the image and explain the likely cause."),
+  treatment: z.string().describe("A detailed, actionable treatment plan in markdown format. It should suggest specific organic and chemical control methods, as well as preventative measures a farmer can take."),
+});
+export type DiagnosePlantDiseaseOutput = z.infer<typeof DiagnosePlantDiseaseOutputSchema>;
 
 class AgriculturalAITools {
   private isInitialized = false;
@@ -228,245 +249,275 @@ Respond in this exact JSON format:
     }
   }
 
-  private async analyzeImageWithGemini(prompt: string, imageUri: string): Promise<any> {
+  async diagnosePlantDisease(input: DiagnosePlantDiseaseInput): Promise<DiagnosePlantDiseaseOutput> {
+    console.log('🌿 Starting plant disease diagnosis with Gemini AI...');
+
     try {
-      console.log('🤖 Sending image analysis request to Gemini AI...');
-      
-      // For now, since Gemini AI vision capabilities need special setup,
-      // we'll use text-based analysis with a detailed description
-      const fullPrompt = `${prompt}
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
 
-Note: Since direct image analysis is not yet implemented, please provide a realistic analysis based on common agricultural scenarios. Use your agricultural expertise to generate a plausible result that would be typical for the requested analysis type.`;
+      const languageText = input.language || 'English';
+      const prompt = `You are an expert plant pathologist and botanist serving farmers in Zambia. Your task is to analyze the provided image of a plant leaf and provide a clear, actionable diagnosis.
 
-      const response = await geminiAI.analyzeImageWithPrompt(imageUri, fullPrompt);
+**IMPORTANT: The entire response MUST be in ${languageText}.**
+
+Analyze the image and provide the following information:
+1.  **Plant Identification (plantName):** Identify the plant species.
+2.  **Health Status (isHealthy):** Determine if the plant is healthy or showing signs of disease.
+3.  **Disease Identification (disease):** If the plant is not healthy, identify the specific disease or pest affecting it. If it is healthy, return 'None'.
+4.  **Confidence (confidence):** State your confidence level (High, Medium, or Low) in this diagnosis based on the image quality and clarity of symptoms.
+5.  **Detailed Diagnosis (diagnosis):** In markdown, provide a detailed description of what you see. Describe the symptoms (e.g., "yellow spots with brown rings," "powdery white substance on the leaf surface," "holes chewed through the leaf"). Explain what these symptoms indicate.
+6.  **Actionable Treatment Plan (treatment):** In markdown, provide a comprehensive and practical treatment plan that a Zambian farmer can follow. Include these sections with markdown '##' headings:
+    *   **## Immediate Actions:** What should the farmer do right now? (e.g., "Remove and destroy affected leaves.")
+    *   **## Organic Control:** Suggest accessible organic methods. (e.g., "Apply a neem oil spray every 7 days.")
+    *   **## Chemical Control:** If necessary, suggest a common, accessible chemical treatment, including the active ingredient to look for. (e.g., "If the infestation is severe, use a fungicide containing Mancozeb.")
+    *   **## Preventative Measures:** Advise on how to prevent this issue in the future. (e.g., "Ensure proper spacing between plants to improve air circulation.")
+
+Return the full analysis in a structured JSON object with the following format:
+{
+  "plantName": "Common name of the plant",
+  "isHealthy": true/false,
+  "disease": "Disease name or 'None' if healthy",
+  "confidence": "High/Medium/Low",
+  "diagnosis": "Detailed diagnosis in markdown format",
+  "treatment": "Detailed treatment plan in markdown format"
+}`;
+
+      const response = await geminiAI.analyzeImageWithPrompt(input.photoDataUri, prompt);
       
+      console.log('🔍 Raw Gemini AI response:', response);
+
       // Try to parse JSON response
       try {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const analysisResult = JSON.parse(jsonMatch[0]);
-          console.log('✅ Successfully parsed Gemini AI response');
-          return analysisResult;
+          console.log('✅ Successfully parsed plant disease diagnosis');
+          return analysisResult as DiagnosePlantDiseaseOutput;
         }
       } catch (parseError) {
         console.warn('⚠️ Could not parse JSON from Gemini response:', parseError);
       }
+
+      // Extract structured data from free-form response
+      const structuredResult = this.extractPlantDiagnosisData(response, languageText);
+      console.log('✅ Plant disease diagnosis completed:', structuredResult);
+      return structuredResult;
+
+    } catch (error) {
+      console.error('❌ Plant disease diagnosis failed:', error);
+
+      return {
+        plantName: 'Unknown',
+        isHealthy: false,
+        disease: 'Analysis Error',
+        confidence: 'Low',
+        diagnosis: `Gemini AI analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}.`,
+        treatment: 'Please try again with a clear, well-lit photo of the plant. If problems persist, consult with a local agricultural extension office.',
+      };
+    }
+  }
+
+  private extractPlantDiagnosisData(response: string, language: string): DiagnosePlantDiseaseOutput {
+    // Extract plant diagnosis information from text response
+    const plantNameMatch = response.match(/plant\s*name[:\s]+([^\n.]+)/i) || 
+                          response.match(/species[:\s]+([^\n.]+)/i) ||
+                          response.match(/identified\s*as[:\s]+([^\n.]+)/i);
+    
+    const diseaseMatch = response.match(/disease[:\s]+([^\n.]+)/i) ||
+                        response.match(/condition[:\s]+([^\n.]+)/i);
+    
+    const confidenceMatch = response.match(/confidence[:\s]+(high|medium|low)/i);
+    
+    const healthyMatch = response.match(/healthy|no\s*disease|disease-free/i);
+    const isHealthy = healthyMatch !== null && !response.match(/not\s*healthy|unhealthy|diseased/i);
+    
+    // Extract diagnosis and treatment from the response
+    const diagnosisStart = response.search(/diagnosis|symptoms|observations/i);
+    const treatmentStart = response.search(/treatment|recommendations|control/i);
+    
+    let diagnosis = '';
+    let treatment = '';
+    
+    if (diagnosisStart !== -1) {
+      const diagnosisEnd = treatmentStart !== -1 ? treatmentStart : response.length;
+      diagnosis = response.substring(diagnosisStart, diagnosisEnd).trim();
+    } else {
+      diagnosis = response.substring(0, Math.min(300, response.length)).trim();
+    }
+    
+    if (treatmentStart !== -1) {
+      treatment = response.substring(treatmentStart).trim();
+    } else {
+      treatment = `## Immediate Actions
+Remove any affected plant parts if disease is present.
+
+## Organic Control
+Apply neem oil or organic fungicides if needed.
+
+## Chemical Control
+Consult with agricultural extension office for appropriate chemicals.
+
+## Preventative Measures
+Maintain proper plant spacing and good air circulation.`;
+    }
+
+    return {
+      plantName: plantNameMatch ? plantNameMatch[1].trim() : 'Unknown Plant',
+      isHealthy: isHealthy,
+      disease: diseaseMatch ? diseaseMatch[1].trim() : (isHealthy ? 'None' : 'Unknown Disease'),
+      confidence: confidenceMatch ? (confidenceMatch[1].charAt(0).toUpperCase() + confidenceMatch[1].slice(1).toLowerCase()) as "High" | "Medium" | "Low" : 'Medium',
+      diagnosis: diagnosis || 'Analysis of the plant image shows various characteristics that require further examination.',
+      treatment: treatment || 'Consult with agricultural expert for specific treatment recommendations.'
+    };
+  }
+
+  private async analyzeImageWithGemini(prompt: string, imageUri: string): Promise<any> {
+    try {
+      console.log('🤖 Sending image analysis request to Gemini AI...');
+      console.log('📸 Image URI length:', imageUri.length);
+      console.log('📝 Prompt length:', prompt.length);
+
+      // Validate image URI format
+      if (!imageUri.startsWith('data:image/')) {
+        throw new Error('Invalid image format. Expected data URI format starting with data:image/');
+      }
+
+      // Directly send the image data to Gemini AI for analysis
+      const response = await geminiAI.analyzeImageWithPrompt(imageUri, prompt);
       
-      // Fallback to generated result if parsing fails
-      return this.generateFallbackResult(prompt);
-      
+      console.log('🔍 Raw Gemini AI response:', response);
+      console.log('📊 Response length:', response.length);
+
+      // Try to parse JSON response
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const analysisResult = JSON.parse(jsonMatch[0]);
+          console.log('✅ Successfully parsed Gemini AI response:', analysisResult);
+          return analysisResult;
+        } else {
+          console.log('⚠️ No JSON found in response, attempting to extract structured data...');
+          
+          // Try to extract structured information from the response
+          const structuredResult = this.extractStructuredDataFromResponse(response, prompt);
+          if (structuredResult) {
+            console.log('✅ Successfully extracted structured data from response');
+            return structuredResult;
+          } else {
+            console.error('❌ Failed to extract structured data from response');
+            throw new Error('Could not extract structured data from Gemini AI response');
+          }
+        }
+      } catch (parseError) {
+        console.warn('⚠️ Could not parse JSON from Gemini response:', parseError);
+        console.log('📝 Full response content:', response);
+        
+        // Try to extract structured information from the response
+        const structuredResult = this.extractStructuredDataFromResponse(response, prompt);
+        if (structuredResult) {
+          console.log('✅ Successfully extracted structured data from response');
+          return structuredResult;
+        } else {
+          console.error('❌ Failed to extract structured data from response');
+          throw new Error(`Could not parse response from Gemini AI: ${parseError}`);
+        }
+      }
+
     } catch (error) {
       console.error('❌ Gemini AI analysis failed:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
 
-  private generateFallbackResult(prompt: string): any {
-    // Generate realistic fallback based on prompt type
-    if (prompt.includes('plant disease') || prompt.includes('pathologist')) {
-      return this.generatePlantDiseaseResult();
-    } else if (prompt.includes('pest') || prompt.includes('entomologist')) {
-      return this.generatePestResult();
-    } else if (prompt.includes('weed') || prompt.includes('botanist')) {
-      return this.generateWeedResult();
-    } else if (prompt.includes('soil') || prompt.includes('soil scientist')) {
-      return this.generateSoilResult();
-    }
-    
-    throw new Error('Unknown analysis type for fallback');
-  }
-
-  private generatePlantDiseaseResult(): PlantDiseaseResult {
-    const diseases = [
-      {
-        disease: 'Healthy Plant',
-        confidence: 0.92,
-        description: 'The plant appears healthy with vibrant green foliage and no visible signs of disease. Good leaf structure and color indicate optimal plant health.',
-        treatment: 'Continue current care regimen. Maintain proper watering schedule, ensure adequate nutrition, and monitor for any changes.',
-        severity: 'low' as const
-      },
-      {
-        disease: 'Fungal Leaf Spot',
-        confidence: 0.87,
-        description: 'Dark, circular spots detected on leaf surfaces characteristic of fungal leaf spot disease. Common in humid conditions with poor air circulation.',
-        treatment: 'Remove affected leaves immediately. Apply copper-based fungicide. Improve air circulation and avoid overhead watering.',
-        severity: 'medium' as const
-      },
-      {
-        disease: 'Powdery Mildew',
-        confidence: 0.89,
-        description: 'White, powdery coating visible on leaf surfaces indicating powdery mildew infection. Thrives in warm, humid conditions.',
-        treatment: 'Increase air circulation around plants. Apply sulfur-based fungicide or neem oil. Remove severely affected foliage.',
-        severity: 'medium' as const
-      },
-      {
-        disease: 'Bacterial Blight',
-        confidence: 0.84,
-        description: 'Brown lesions with yellow halos detected, characteristic of bacterial blight. Bacterial infections spread rapidly in wet conditions.',
-        treatment: 'Remove infected plant material immediately. Apply copper bactericide. Ensure good drainage and avoid water on foliage.',
-        severity: 'high' as const
-      },
-      {
-        disease: 'Nutrient Deficiency',
-        confidence: 0.78,
-        description: 'Yellowing patterns and discoloration suggest nutrient deficiency, likely nitrogen or potassium. Affects overall plant vigor.',
-        treatment: 'Conduct soil test to identify specific deficiencies. Apply balanced fertilizer or targeted nutrient supplements as needed.',
-        severity: 'low' as const
-      },
-      {
-        disease: 'Viral Infection',
-        confidence: 0.81,
-        description: 'Mosaic patterns or unusual leaf distortion may indicate viral infection. Often spread by insects or contaminated tools.',
-        treatment: 'Remove infected plants to prevent spread. Control insect vectors. Disinfect tools between plants.',
-        severity: 'high' as const
+  private extractStructuredDataFromResponse(response: string, prompt: string): any {
+    // This method extracts structured data from free-form text responses
+    try {
+      if (prompt.includes('plant disease') || prompt.includes('pathologist')) {
+        return this.extractPlantDiseaseData(response);
+      } else if (prompt.includes('pest') || prompt.includes('entomologist')) {
+        return this.extractPestData(response);
+      } else if (prompt.includes('weed') || prompt.includes('botanist')) {
+        return this.extractWeedData(response);
+      } else if (prompt.includes('soil') || prompt.includes('soil scientist')) {
+        return this.extractSoilData(response);
       }
-    ];
-
-    return diseases[Math.floor(Math.random() * diseases.length)];
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to extract structured data:', error);
+      return null;
+    }
   }
 
-  private generatePestResult(): PestResult {
-    const pests = [
-      {
-        pest: 'Aphids',
-        confidence: 0.91,
-        description: 'Small, soft-bodied insects clustered on stems and undersides of leaves. Feed on plant sap and can transmit viral diseases.',
-        treatment: 'Spray with insecticidal soap or neem oil. Release beneficial insects like ladybugs. Remove heavily infested plant parts.',
-        severity: 'medium' as const
-      },
-      {
-        pest: 'Spider Mites',
-        confidence: 0.88,
-        description: 'Microscopic mites causing stippled, yellowing leaves. Fine webbing may be visible on plant surfaces in severe infestations.',
-        treatment: 'Increase humidity around plants. Use miticide spray or predatory mites for biological control. Remove affected foliage.',
-        severity: 'high' as const
-      },
-      {
-        pest: 'Whiteflies',
-        confidence: 0.86,
-        description: 'Small white flying insects found on leaf undersides. Suck plant juices and excrete honeydew, leading to sooty mold.',
-        treatment: 'Use yellow sticky traps to monitor and capture adults. Apply insecticidal soap or systemic insecticides.',
-        severity: 'medium' as const
-      },
-      {
-        pest: 'Thrips',
-        confidence: 0.83,
-        description: 'Tiny, slender insects causing silvery streaks and black specks on leaves. Feed by scraping leaf surface cells.',
-        treatment: 'Use blue sticky traps for monitoring. Apply appropriate insecticides or release predatory mites for control.',
-        severity: 'medium' as const
-      },
-      {
-        pest: 'Scale Insects',
-        confidence: 0.79,
-        description: 'Small, dome-shaped insects attached to stems and leaves. Feed on plant sap and can cause yellowing and stunting.',
-        treatment: 'Scrape off scales manually when possible. Apply horticultural oil or systemic insecticides for severe infestations.',
-        severity: 'medium' as const
-      },
-      {
-        pest: 'No Pests Detected',
-        confidence: 0.93,
-        description: 'No visible pest activity detected in the analyzed image. Plant appears to be free of significant pest pressure.',
-        treatment: 'Continue regular monitoring. Maintain good garden hygiene and encourage beneficial insects for prevention.',
-        severity: 'low' as const
-      }
-    ];
-
-    return pests[Math.floor(Math.random() * pests.length)];
-  }
-
-  private generateWeedResult(): WeedResult {
-    const weeds = [
-      {
-        weed: 'Dandelion',
-        confidence: 0.89,
-        description: 'Perennial broadleaf weed with deeply serrated leaves and bright yellow flowers. Has a long taproot system.',
-        treatment: 'Hand removal including entire root system. For large areas, apply selective broadleaf herbicide in early spring.',
-        invasiveness: 'medium' as const
-      },
-      {
-        weed: 'Crabgrass',
-        confidence: 0.92,
-        description: 'Annual grass weed that spreads by seeds. Forms dense, unsightly mats that crowd out desirable grasses.',
-        treatment: 'Apply pre-emergent herbicide in early spring before germination. Hand removal of small patches.',
-        invasiveness: 'high' as const
-      },
-      {
-        weed: 'White Clover',
-        confidence: 0.85,
-        description: 'Low-growing perennial legume with three-leaflet leaves and small white flowers. Actually fixes nitrogen in soil.',
-        treatment: 'May be beneficial to leave for soil health. If removal desired, use selective broadleaf herbicide.',
-        invasiveness: 'low' as const
-      },
-      {
-        weed: 'Broadleaf Plantain',
-        confidence: 0.87,
-        description: 'Perennial weed with distinctive ribbed leaves arranged in a rosette pattern. Common in compacted soils.',
-        treatment: 'Hand removal including root system. Improve soil drainage and reduce compaction to prevent reestablishment.',
-        invasiveness: 'medium' as const
-      },
-      {
-        weed: 'Chickweed',
-        confidence: 0.76,
-        description: 'Small annual weed with tiny white flowers and small oval leaves. Spreads rapidly in cool, moist conditions.',
-        treatment: 'Hand removal when young and before flowering. Use appropriate herbicide for larger infestations.',
-        invasiveness: 'medium' as const
-      }
-    ];
-
-    return weeds[Math.floor(Math.random() * weeds.length)];
-  }
-
-  private generateSoilResult(): SoilAnalysisResult {
-    const soilTypes = ['Clay', 'Sandy', 'Loam', 'Silty Clay', 'Sandy Loam'];
-    const fertilityLevels: ('poor' | 'fair' | 'good' | 'excellent')[] = ['poor', 'fair', 'good', 'excellent'];
-    const moistureLevels: ('dry' | 'optimal' | 'wet')[] = ['dry', 'optimal', 'wet'];
-
-    const soilType = soilTypes[Math.floor(Math.random() * soilTypes.length)];
-    const fertility = fertilityLevels[Math.floor(Math.random() * fertilityLevels.length)];
-    const moisture = moistureLevels[Math.floor(Math.random() * moistureLevels.length)];
-    const pH = Math.round((Math.random() * 4 + 5) * 10) / 10; // pH between 5.0 and 9.0
-
-    const recommendations = [];
-    
-    // pH recommendations
-    if (pH < 6.0) {
-      recommendations.push('Soil is acidic (pH < 6.0). Add agricultural lime to raise pH for better nutrient availability.');
-    } else if (pH > 8.0) {
-      recommendations.push('Soil is alkaline (pH > 8.0). Add sulfur or organic matter to lower pH.');
-    } else {
-      recommendations.push('Soil pH is in acceptable range for most crops.');
-    }
-
-    // Fertility recommendations
-    if (fertility === 'poor') {
-      recommendations.push('Low fertility detected. Add compost, well-aged manure, or balanced fertilizer.');
-    } else if (fertility === 'excellent') {
-      recommendations.push('Excellent soil fertility. Maintain with organic matter additions.');
-    }
-
-    // Moisture recommendations
-    if (moisture === 'dry') {
-      recommendations.push('Soil appears dry. Increase watering frequency or add organic mulch to retain moisture.');
-    } else if (moisture === 'wet') {
-      recommendations.push('Soil appears waterlogged. Improve drainage to prevent root rot and nutrient leaching.');
-    } else {
-      recommendations.push('Soil moisture levels appear optimal.');
-    }
-
-    // Soil type specific recommendations
-    if (soilType === 'Clay') {
-      recommendations.push('Clay soil: Add compost to improve drainage and workability.');
-    } else if (soilType === 'Sandy') {
-      recommendations.push('Sandy soil: Add organic matter to improve water and nutrient retention.');
-    }
+  private extractPlantDiseaseData(response: string): any {
+    // Extract plant disease information from text response
+    const diseaseMatch = response.match(/disease[:\s]+([^\n.]+)/i);
+    const confidenceMatch = response.match(/confidence[:\s]+([^\n.]+)/i);
+    const descriptionMatch = response.match(/description[:\s]+([^\n.]+)/i);
+    const treatmentMatch = response.match(/treatment[:\s]+([^\n.]+)/i);
+    const severityMatch = response.match(/severity[:\s]+([^\n.]+)/i);
 
     return {
-      soilType,
-      pH,
-      fertility,
-      moisture,
-      recommendations,
-      confidence: Math.round((Math.random() * 0.3 + 0.7) * 100) / 100 // 70-100% confidence
+      disease: diseaseMatch ? diseaseMatch[1].trim() : 'Unknown Disease',
+      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) || 0.7 : 0.7,
+      description: descriptionMatch ? descriptionMatch[1].trim() : response.substring(0, 200) + '...',
+      treatment: treatmentMatch ? treatmentMatch[1].trim() : 'Consult with agricultural expert for treatment recommendations.',
+      severity: severityMatch ? severityMatch[1].toLowerCase().trim() : 'medium'
+    };
+  }
+
+  private extractPestData(response: string): any {
+    const pestMatch = response.match(/pest[:\s]+([^\n.]+)/i);
+    const confidenceMatch = response.match(/confidence[:\s]+([^\n.]+)/i);
+    const descriptionMatch = response.match(/description[:\s]+([^\n.]+)/i);
+    const treatmentMatch = response.match(/treatment[:\s]+([^\n.]+)/i);
+    const severityMatch = response.match(/severity[:\s]+([^\n.]+)/i);
+
+    return {
+      pest: pestMatch ? pestMatch[1].trim() : 'Unknown Pest',
+      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) || 0.7 : 0.7,
+      description: descriptionMatch ? descriptionMatch[1].trim() : response.substring(0, 200) + '...',
+      treatment: treatmentMatch ? treatmentMatch[1].trim() : 'Consult with agricultural expert for treatment recommendations.',
+      severity: severityMatch ? severityMatch[1].toLowerCase().trim() : 'medium'
+    };
+  }
+
+  private extractWeedData(response: string): any {
+    const weedMatch = response.match(/weed[:\s]+([^\n.]+)/i);
+    const confidenceMatch = response.match(/confidence[:\s]+([^\n.]+)/i);
+    const descriptionMatch = response.match(/description[:\s]+([^\n.]+)/i);
+    const treatmentMatch = response.match(/treatment[:\s]+([^\n.]+)/i);
+    const invasivenessMatch = response.match(/invasiveness[:\s]+([^\n.]+)/i);
+
+    return {
+      weed: weedMatch ? weedMatch[1].trim() : 'Unknown Weed',
+      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) || 0.7 : 0.7,
+      description: descriptionMatch ? descriptionMatch[1].trim() : response.substring(0, 200) + '...',
+      treatment: treatmentMatch ? treatmentMatch[1].trim() : 'Consult with agricultural expert for treatment recommendations.',
+      invasiveness: invasivenessMatch ? invasivenessMatch[1].toLowerCase().trim() : 'medium'
+    };
+  }
+
+  private extractSoilData(response: string): any {
+    const soilTypeMatch = response.match(/soil\s*type[:\s]+([^\n.]+)/i);
+    const pHMatch = response.match(/ph[:\s]+([0-9.]+)/i);
+    const fertilityMatch = response.match(/fertility[:\s]+([^\n.]+)/i);
+    const moistureMatch = response.match(/moisture[:\s]+([^\n.]+)/i);
+    const confidenceMatch = response.match(/confidence[:\s]+([^\n.]+)/i);
+
+    return {
+      soilType: soilTypeMatch ? soilTypeMatch[1].trim() : 'Unknown Soil Type',
+      pH: pHMatch ? parseFloat(pHMatch[1]) : 7.0,
+      fertility: fertilityMatch ? fertilityMatch[1].toLowerCase().trim() : 'fair',
+      moisture: moistureMatch ? moistureMatch[1].toLowerCase().trim() : 'optimal',
+      recommendations: [
+        'Based on the analysis, follow recommended agricultural practices for this soil type.',
+        'Consider soil testing for more detailed recommendations.'
+      ],
+      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) || 0.7 : 0.7
     };
   }
 
