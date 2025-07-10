@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info, Bug } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
+import { convertImageToDataUri, getErrorMessage } from '../../lib/image-analysis-utils';
 
 interface PestIdentifierProps {
   onBack: () => void;
@@ -74,10 +75,16 @@ const PestIdentifier: React.FC<PestIdentifierProps> = ({ onBack }) => {
 
     setAnalyzing(true);
     try {
-      const analysis = await agriculturalAITools.identifyPest(selectedImage);
+      console.log('🔍 Converting image for AI analysis...');
+      const base64DataUri = await convertImageToDataUri(selectedImage);
+      
+      console.log('� Starting pest identification with Gemini AI...');
+      const analysis = await agriculturalAITools.identifyPest(base64DataUri);
       setResult(analysis);
-    } catch {
-      Alert.alert('Analysis Failed', 'Failed to identify the pest. Please try again.');
+    } catch (error) {
+      console.error('❌ Pest analysis failed:', error);
+      const errorMessage = getErrorMessage(error);
+      Alert.alert('Analysis Failed', errorMessage);
     } finally {
       setAnalyzing(false);
     }

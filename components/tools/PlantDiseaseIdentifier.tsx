@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info } from 'lucide-react-native';
+import { Camera, Upload, ArrowLeft, AlertTriangle, CheckCircle, Info, Leaf } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
+import { convertImageToDataUri, getErrorMessage } from '../../lib/image-analysis-utils';
 
 interface PlantDiseaseIdentifierProps {
   onBack: () => void;
@@ -77,7 +78,11 @@ const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack 
       console.log('🔬 Starting plant disease analysis...');
       console.log('📷 Image URI:', selectedImage);
       
-      const analysis = await agriculturalAITools.identifyPlantDisease(selectedImage);
+      console.log('🔍 Converting image for AI analysis...');
+      const base64DataUri = await convertImageToDataUri(selectedImage);
+
+      console.log('🍃 Starting plant disease identification with Gemini AI...');
+      const analysis = await agriculturalAITools.identifyPlantDisease(base64DataUri);
       
       console.log('✅ Analysis completed:', analysis);
       setResult(analysis);
@@ -89,11 +94,11 @@ const PlantDiseaseIdentifier: React.FC<PlantDiseaseIdentifierProps> = ({ onBack 
       
     } catch (error) {
       console.error('❌ Plant disease analysis failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = getErrorMessage(error);
       
       Alert.alert(
         'Analysis Failed', 
-        `Failed to analyze the plant disease: ${errorMessage}\n\nPlease try again with a clear, well-lit photo of plant leaves.`
+        errorMessage
       );
       
       // Set error result

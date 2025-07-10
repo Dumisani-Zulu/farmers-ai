@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, ArrowLeft, TestTube, Droplets, TrendingUp, Activity } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { agriculturalAITools } from '../../lib/agricultural-ai-tools';
+import { convertImageToDataUri, getErrorMessage } from '../../lib/image-analysis-utils';
 
 interface AISoilAnalyzerProps {
   onBack: () => void;
@@ -75,10 +76,16 @@ const AISoilAnalyzer: React.FC<AISoilAnalyzerProps> = ({ onBack }) => {
 
     setAnalyzing(true);
     try {
-      const analysis = await agriculturalAITools.analyzeSoil(selectedImage);
+      console.log('🔍 Converting image for AI analysis...');
+      const base64DataUri = await convertImageToDataUri(selectedImage);
+      
+      console.log('🌱 Starting soil analysis with Gemini AI...');
+      const analysis = await agriculturalAITools.analyzeSoil(base64DataUri);
       setResult(analysis);
-    } catch {
-      Alert.alert('Analysis Failed', 'Failed to analyze the soil. Please try again.');
+    } catch (error) {
+      console.error('❌ Soil analysis failed:', error);
+      const errorMessage = getErrorMessage(error);
+      Alert.alert('Analysis Failed', errorMessage);
     } finally {
       setAnalyzing(false);
     }
