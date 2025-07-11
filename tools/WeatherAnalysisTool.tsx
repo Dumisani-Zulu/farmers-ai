@@ -74,7 +74,7 @@ export const WeatherAnalysisTool: React.FC<WeatherAnalysisProps> = ({
         <View className="border border-gray-300 rounded-lg">
           <Picker
             selectedValue={formData.cropType}
-            onValueChange={(value) => handleInputChange('cropType', value)}
+            onValueChange={(value: string) => handleInputChange('cropType', value)}
             style={{ height: 50 }}
           >
             <Picker.Item label="Select crop type..." value="" />
@@ -96,7 +96,7 @@ export const WeatherAnalysisTool: React.FC<WeatherAnalysisProps> = ({
         <View className="border border-gray-300 rounded-lg">
           <Picker
             selectedValue={formData.farmingActivity}
-            onValueChange={(value) => handleInputChange('farmingActivity', value)}
+            onValueChange={(value: string) => handleInputChange('farmingActivity', value)}
             style={{ height: 50 }}
           >
             <Picker.Item label="General farming" value="general" />
