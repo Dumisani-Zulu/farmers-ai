@@ -5,10 +5,13 @@
 ## 🌟 Key Features
 
 ### 🌱 AI-Powered Crop Management
-- Smart crop recommendations based on location, weather, and soil conditions
-- Plant disease identification using computer vision
-- Pest detection and treatment suggestions
-- Weed identification assistance
+- **Dynamic AI Crop Recommendations**: Gemini AI generates personalized crop suggestions based on real-time weather data
+- **Weather-Specific Analysis**: Detailed reasoning for temperature, rainfall, and growing conditions
+- **14-Day Actionable Plans**: Step-by-step farming guides for land preparation, planting, and early management
+- **Diverse Crop Suggestions**: AI recommends cereals, vegetables, legumes, and regional varieties (not limited to predefined lists)
+- **Multi-Language Support**: Recommendations available in multiple languages
+- Plant disease identification using computer vision (coming soon)
+- Pest detection and treatment suggestions (coming soon)
 
 ### 🌡️ Weather Intelligence
 - Real-time weather monitoring and forecasts

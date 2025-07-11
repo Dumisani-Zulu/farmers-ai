@@ -50,18 +50,48 @@ export default function CropsScreen() {
   const isLoading = recommendationsLoading || locationLoading || savedCropsLoading;
   const error = recommendationsError || locationError || savedCropsError;
 
-  // Initialize location on mount if not already set
+  // Initialize location and trigger recommendations when weather data is available
   useEffect(() => {
     if (!currentLocation && !locationLoading) {
       getCurrentLocation();
     }
   }, [currentLocation, locationLoading, getCurrentLocation]);
 
+  // Trigger AI recommendations when weather data becomes available
+  useEffect(() => {
+    if (weatherData && showRecommendations && !recommendationsLoading && recommendations.length === 0) {
+      console.log('🌱 Weather data available, triggering AI crop recommendations...');
+      const getAIRecommendations = async () => {
+        try {
+          await refreshRecommendations(weatherData, {
+            maxRecommendations: 8,
+            minSuitabilityScore: 40,
+            experienceLevel: 'intermediate',
+            farmSize: 'medium',
+            marketFocus: 'local',
+            language: 'English',
+          });
+        } catch (error) {
+          console.error('Failed to get AI recommendations:', error);
+        }
+      };
+      
+      getAIRecommendations();
+    }
+  }, [weatherData, showRecommendations, recommendationsLoading, recommendations.length, refreshRecommendations]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      if (showRecommendations) {
-        await refreshRecommendations();
+      if (showRecommendations && weatherData) {
+        await refreshRecommendations(weatherData, {
+          maxRecommendations: 8,
+          minSuitabilityScore: 40,
+          experienceLevel: 'intermediate',
+          farmSize: 'medium',
+          marketFocus: 'local',
+          language: 'English',
+        });
       }
     } catch (error) {
       console.error('Refresh error:', error);

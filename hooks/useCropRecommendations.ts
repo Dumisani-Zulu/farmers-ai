@@ -1,36 +1,7 @@
 import { useState } from 'react';
+import { getAICropRecommendationService, type AICropRecommendation, type RecommendationOptions } from '@/ai/services/ai-crop-recommendation-service';
 
-export interface CropRecommendation {
-  id: string;
-  name: string;
-  variety?: string;
-  plantingDate: string;
-  harvestDate?: string;
-  plantingWindow?: string;
-  expectedHarvest?: string;
-  description: string;
-  growthStage: string;
-  plantingTips?: string[];
-  requirements: {
-    temperature: { min: number; max: number };
-    rainfall: { min: number; max: number };
-    humidity?: { min: number; max: number };
-    soilType: string[];
-    soilPH: { min: number; max: number };
-    sunlight: string;
-  };
-  benefits: string[];
-  challenges: string[];
-  tips: string[];
-  reasons?: string[];
-  warnings?: string[];
-  suitabilityScore: number;
-  weatherCompatibility: {
-    temperature: number;
-    rainfall: number;
-    overall: number;
-  };
-}
+export type { AICropRecommendation as CropRecommendation } from '@/ai/services/ai-crop-recommendation-service';
 
 export interface WeatherData {
   current: {
@@ -68,22 +39,55 @@ export interface WeatherData {
 }
 
 export const useCropRecommendations = () => {
-  const [recommendations, setRecommendations] = useState<CropRecommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<AICropRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getRecommendations = async (location?: { lat: number; lon: number }) => {
+  const getRecommendations = async (
+    weatherData?: WeatherData, 
+    options?: RecommendationOptions
+  ) => {
     setIsLoading(true);
     setError(null);
+    
+    console.log('🌱 Starting AI crop recommendations process...');
 
     try {
-      // Placeholder - will be implemented with actual AI tools
-      const mockRecommendations: CropRecommendation[] = [];
-      setRecommendations(mockRecommendations);
+      if (!weatherData) {
+        throw new Error('Weather data is required for AI crop recommendations');
+      }
+
+      console.log('📍 Weather data available:', {
+        location: weatherData.location.city,
+        temperature: weatherData.current.temperature,
+        condition: weatherData.current.condition
+      });
+
+      const aiCropService = getAICropRecommendationService();
+      console.log('🤖 AI service initialized, requesting recommendations...');
+      
+      const cropRecommendations = await aiCropService.getRecommendations(weatherData, {
+        maxRecommendations: 8,
+        minSuitabilityScore: 40,
+        experienceLevel: 'intermediate',
+        farmSize: 'medium',
+        marketFocus: 'local',
+        language: 'English',
+        ...options
+      });
+      
+      console.log(`✅ Successfully generated ${cropRecommendations.length} AI crop recommendations`);
+      setRecommendations(cropRecommendations);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get recommendations');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get AI crop recommendations';
+      setError(errorMessage);
+      console.error('❌ AI Crop recommendations error:', err);
+      
+      // Set empty recommendations on error
+      setRecommendations([]);
     } finally {
       setIsLoading(false);
+      console.log('🏁 AI crop recommendations process completed');
     }
   };
 

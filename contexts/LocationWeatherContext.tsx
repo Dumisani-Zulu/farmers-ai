@@ -56,8 +56,20 @@ export const LocationWeatherProvider: React.FC<{ children: React.ReactNode }> = 
   // Load cached data and initialize location service on mount
   useEffect(() => {
     const initialize = async () => {
+      // Initialize core services
+      console.log('LocationWeatherProvider: Initializing services...');
       await locationService.initialize();
+      
+      // Initialize AI services
+      console.log('LocationWeatherProvider: Initializing AI services...');
+      const { AppInitializer } = await import('../lib/app-initializer');
+      await AppInitializer.initialize();
+      
+      // Load cached data
+      console.log('LocationWeatherProvider: Loading cached data...');
       await loadCachedData();
+      
+      console.log('LocationWeatherProvider: Initialization complete');
     };
     initialize();
   }, []);

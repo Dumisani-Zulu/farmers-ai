@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { locationService } from '../lib/location-service';
+import { initializeAI, checkAIHealth } from '../ai';
 
 export class AppInitializer {
   private static initialized = false;
@@ -16,6 +17,20 @@ export class AppInitializer {
       console.log('📍 Initializing Location Service...');
       await locationService.initialize();
       console.log('✅ Location Service initialized successfully');
+
+      // Initialize AI Services
+      console.log('🤖 Initializing AI Services...');
+      await initializeAI();
+      
+      // Check AI health
+      const aiHealth = await checkAIHealth();
+      console.log('🔍 AI Health Check:', aiHealth);
+      
+      if (!aiHealth.gemini) {
+        console.warn('⚠️ Gemini AI service not available - some features may be limited');
+      }
+      
+      console.log('✅ AI Services initialized successfully');
 
       this.initialized = true;
       console.log('🎉 App initialization completed successfully!');
