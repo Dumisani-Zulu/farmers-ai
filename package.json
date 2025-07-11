@@ -14,7 +14,8 @@
     "ai:test": "npx tsx scripts/test-ai.ts",
     "ai:test-crops": "npx tsx scripts/test-ai-crops.ts",
     "quota:test": "node scripts/test-quota.js",
-    "setup:env": "cp .env.example .env"
+    "setup:env": "cp .env.example .env",
+    "fix:tsconfig": "node scripts/fix-tsconfig.js"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
