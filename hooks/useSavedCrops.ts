@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CropRecommendation } from './useWeatherBasedCropRecommendations';
+import { CropRecommendation } from './useCropRecommendations';
 
 export interface SavedCrop extends CropRecommendation {
   dateAdded: string;

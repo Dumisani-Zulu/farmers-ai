@@ -10,7 +10,7 @@ import {
   Droplets,
   MapPin
 } from 'lucide-react-native';
-import { CropRecommendation } from '@/hooks/useWeatherBasedCropRecommendations';
+import { CropRecommendation } from '@/hooks/useCropRecommendations';
 import { WeatherData } from '@/contexts/LocationWeatherContext';
 
 interface LocationData {

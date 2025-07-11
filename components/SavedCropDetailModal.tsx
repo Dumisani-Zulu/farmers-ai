@@ -242,30 +242,34 @@ export const SavedCropDetailModal = ({
           </View>
 
           {/* Original Recommendations */}
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Why This Crop?</Text>
-            <View className="bg-green-50 rounded-xl p-4">
-              {crop.reasons.map((reason, index) => (
-                <View key={index} className="flex-row items-start mb-2">
-                  <Text className="text-green-600 mr-2">•</Text>
-                  <Text className="text-green-700 flex-1">{reason}</Text>
-                </View>
-              ))}
+          {crop.reasons && crop.reasons.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-gray-900 mb-3">Why This Crop?</Text>
+              <View className="bg-green-50 rounded-xl p-4">
+                {crop.reasons.map((reason, index) => (
+                  <View key={index} className="flex-row items-start mb-2">
+                    <Text className="text-green-600 mr-2">•</Text>
+                    <Text className="text-green-700 flex-1">{reason}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Planting Tips */}
-          <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Planting Tips</Text>
-            <View className="bg-blue-50 rounded-xl p-4">
-              {crop.plantingTips.map((tip, index) => (
-                <View key={index} className="flex-row items-start mb-2">
-                  <Text className="text-blue-600 mr-2">•</Text>
-                  <Text className="text-blue-700 flex-1">{tip}</Text>
-                </View>
-              ))}
+          {crop.plantingTips && crop.plantingTips.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-gray-900 mb-3">Planting Tips</Text>
+              <View className="bg-blue-50 rounded-xl p-4">
+                {crop.plantingTips.map((tip, index) => (
+                  <View key={index} className="flex-row items-start mb-2">
+                    <Text className="text-blue-600 mr-2">•</Text>
+                    <Text className="text-blue-700 flex-1">{tip}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Warnings */}
           {crop.warnings && crop.warnings.length > 0 && (

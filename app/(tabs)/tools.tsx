@@ -17,11 +17,6 @@ import {
   Zap,
   TestTube
 } from 'lucide-react-native';
-import PlantDiseaseIdentifier from '../../components/tools/PlantDiseaseIdentifier';
-import PestIdentifier from '../../components/tools/PestIdentifier';
-import WeedIdentifier from '../../components/tools/WeedIdentifier';
-import AISoilAnalyzer from '../../components/tools/AISoilAnalyzer';
-import LocationManager from '../../components/tools/LocationManager';
 
 interface Tool {
   id: string;
@@ -264,19 +259,94 @@ export default function ToolsScreen() {
 
   // Render AI tool screens
   if (currentScreen === 'plant-disease') {
-    return <PlantDiseaseIdentifier onBack={handleBackToMain} />;
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="px-4 py-4 bg-white border-b border-gray-200">
+          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
+            <Text className="text-blue-600 font-medium">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">Plant Disease Identifier</Text>
+          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-gray-500 text-center">
+            AI plant disease identification tool will be available here soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
   if (currentScreen === 'pest-identifier') {
-    return <PestIdentifier onBack={handleBackToMain} />;
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="px-4 py-4 bg-white border-b border-gray-200">
+          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
+            <Text className="text-blue-600 font-medium">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">Pest Identifier</Text>
+          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-gray-500 text-center">
+            AI pest identification tool will be available here soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
   if (currentScreen === 'weed-identifier') {
-    return <WeedIdentifier onBack={handleBackToMain} />;
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="px-4 py-4 bg-white border-b border-gray-200">
+          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
+            <Text className="text-blue-600 font-medium">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">Weed Identifier</Text>
+          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-gray-500 text-center">
+            AI weed identification tool will be available here soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
   if (currentScreen === 'soil-analyzer') {
-    return <AISoilAnalyzer onBack={handleBackToMain} />;
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="px-4 py-4 bg-white border-b border-gray-200">
+          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
+            <Text className="text-blue-600 font-medium">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">Soil Analyzer</Text>
+          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-gray-500 text-center">
+            AI soil analysis tool will be available here soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
   if (currentScreen === 'location-manager') {
-    return <LocationManager onBack={handleBackToMain} />;
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="px-4 py-4 bg-white border-b border-gray-200">
+          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
+            <Text className="text-blue-600 font-medium">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-900">Location Manager</Text>
+          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-gray-500 text-center">
+            Location management tool will be available here soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (

@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ProfileEditModal } from '@/components/ProfileEditModal';
-import { AuthDebugComponent } from '@/components/AuthDebugComponent';
 import { 
   User, 
   MapPin, 
@@ -233,9 +232,6 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Debug Component - Remove in production */}
-        {/* {__DEV__ && <AuthDebugComponent />} */}
-
         {/* Profile Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-sm">
           <View className="flex-row items-center justify-between mb-4">

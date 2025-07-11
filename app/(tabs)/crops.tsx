@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Sprout, Droplets, TrendingUp, MapPin, CloudRain } from 'lucide-react-native';
-import { useWeatherBasedCropRecommendations, CropRecommendation } from '@/hooks/useWeatherBasedCropRecommendations';
+import { useCropRecommendations, CropRecommendation } from '@/hooks/useCropRecommendations';
 import { useSavedCrops, SavedCrop } from '@/hooks/useSavedCrops';
 import { useLocationWeather } from '@/contexts/LocationWeatherContext';
 import { CropRecommendationsList } from '@/components/CropRecommendationsList';
@@ -11,7 +11,6 @@ import { SavedCropsList } from '@/components/SavedCropsList';
 import { CropDetailModal } from '@/components/CropDetailModal';
 import { SavedCropDetailModal } from '@/components/SavedCropDetailModal';
 import { LocationSearchModal } from '@/components/LocationSearchModal';
-import { GeminiDebugComponent } from '@/components/GeminiDebugComponent';
 
 export default function CropsScreen() {
   const [showRecommendations, setShowRecommendations] = useState(true);
@@ -19,15 +18,14 @@ export default function CropsScreen() {
   const [selectedSavedCrop, setSelectedSavedCrop] = useState<SavedCrop | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showLocationSearch, setShowLocationSearch] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
   
-  // Use the new weather-based recommendations hook
+  // Use the crop recommendations hook
   const {
     recommendations,
     isLoading: recommendationsLoading,
     error: recommendationsError,
-    refreshRecommendations,
-  } = useWeatherBasedCropRecommendations();
+    getRecommendations: refreshRecommendations,
+  } = useCropRecommendations();
 
   // Use the saved crops hook
   const {
@@ -129,14 +127,6 @@ export default function CropsScreen() {
             <Text className="text-green-700 text-sm font-medium ml-1">
               {currentLocation?.city || 'Location'}
             </Text>
-          </TouchableOpacity>
-          
-          {/* Debug Button - Temporary */}
-          <TouchableOpacity
-            onPress={() => setShowDebug(true)}
-            className="bg-blue-50 px-3 py-2 rounded-lg"
-          >
-            <Text className="text-blue-700 text-xs font-medium">Debug AI</Text>
           </TouchableOpacity>
         </View>
         
@@ -251,19 +241,6 @@ export default function CropsScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Debug Modal - Temporary */}
-      {showDebug && (
-        <View className="absolute inset-0 bg-white z-50">
-          <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold">AI Debug</Text>
-            <TouchableOpacity onPress={() => setShowDebug(false)}>
-              <Text className="text-blue-600 font-medium">Close</Text>
-            </TouchableOpacity>
-          </View>
-          <GeminiDebugComponent />
-        </View>
-      )}
 
       {/* Location Search Modal */}
       <LocationSearchModal

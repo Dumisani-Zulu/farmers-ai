@@ -12,6 +12,7 @@
     "build:android-local": "expo run:android",
     "lint": "expo lint",
     "ai:test": "npx tsx scripts/test-ai.ts",
+    "quota:test": "node scripts/test-quota.js",
     "setup:env": "cp .env.example .env"
   },
   "dependencies": {
@@ -73,6 +74,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/base-64": "^1.0.2",
     "@types/react": "~19.0.10",
     "@types/text-encoding": "^0.0.40",
     "autoprefixer": "^10.4.21",

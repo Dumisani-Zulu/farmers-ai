@@ -14,9 +14,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LocationWeatherProvider } from '@/contexts/LocationWeatherContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-// Import polyfills for TensorFlow.js
-import '../lib/polyfills';
-
 // Import global CSS for web
 if (Platform.OS === 'web') {
   import('../global.css');

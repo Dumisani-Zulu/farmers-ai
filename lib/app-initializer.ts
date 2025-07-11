@@ -1,7 +1,4 @@
 import { Alert } from 'react-native';
-import { agricultureAI } from '../lib/agriculture-ai';
-import { agriculturalAITools } from '../lib/agricultural-ai-tools';
-import { tensorFlowService } from '../lib/tensorflow';
 import { locationService } from '../lib/location-service';
 
 export class AppInitializer {
@@ -15,33 +12,10 @@ export class AppInitializer {
     try {
       console.log('🚀 Initializing Agriculture AI App...');
 
-      // Initialize TensorFlow.js
-      console.log('📊 Initializing TensorFlow.js...');
-      await tensorFlowService.initialize();
-      console.log('✅ TensorFlow.js initialized successfully');
-
-      // Initialize Agriculture AI services
-      console.log('🤖 Initializing Agriculture AI services...');
-      await agricultureAI.initialize();
-      console.log('✅ Agriculture AI services initialized successfully');
-
-      // Initialize Agricultural AI Tools (plant disease identification, etc.)
-      console.log('🌱 Initializing Agricultural AI Tools...');
-      await agriculturalAITools.initialize();
-      console.log('✅ Agricultural AI Tools initialized successfully');
-
       // Initialize Location Service
       console.log('📍 Initializing Location Service...');
       await locationService.initialize();
       console.log('✅ Location Service initialized successfully');
-
-      // Memory check
-      const memInfo = tensorFlowService.getMemoryInfo();
-      console.log('💾 TensorFlow Memory Info:', {
-        numTensors: memInfo.numTensors,
-        numDataBuffers: memInfo.numDataBuffers,
-        numBytes: memInfo.numBytes,
-      });
 
       this.initialized = true;
       console.log('🎉 App initialization completed successfully!');
@@ -85,14 +59,12 @@ export class AppInitializer {
   }
 
   static getInitializationStatus(): {
-    tensorFlow: boolean;
-    genkit: boolean;
+    location: boolean;
     overall: boolean;
   } {
     return {
-      tensorFlow: tensorFlowService.isInitialized(),
-      genkit: this.initialized, // Simplified check
-      overall: this.initialized && tensorFlowService.isInitialized(),
+      location: this.initialized,
+      overall: this.initialized,
     };
   }
 }

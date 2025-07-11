@@ -1,4 +1,4 @@
-// Polyfills for TensorFlow.js in React Native
+// Basic polyfills for React Native
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 
@@ -38,7 +38,7 @@ if (Platform.OS !== 'web') {
 }
 
 if (__DEV__) {
-  console.log('TensorFlow.js polyfills loaded successfully');
+  console.log('React Native polyfills loaded successfully');
 }
 
 export {};

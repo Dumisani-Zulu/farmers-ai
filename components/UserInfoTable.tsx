@@ -196,7 +196,7 @@ export const UserInfoTable: React.FC<UserInfoTableProps> = ({
           <InfoRow
             icon={<Calendar size={16} color="#6b7280" />}
             label="Date of Birth"
-            value={userProfile.dateOfBirth}
+            value={(userProfile as any).dateOfBirth}
           />
           
           <InfoRow
