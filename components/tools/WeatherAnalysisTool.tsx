@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { weatherAnalysisAI, WeatherAnalysisRequest, WeatherAnalysisResponse } from '../ai/tools/weather-analysis';
+import { weatherAnalysisAI, WeatherAnalysisRequest, WeatherAnalysisResponse } from '../../ai/tools/weather-analysis';
 
 interface WeatherAnalysisProps {
   userLocation?: {

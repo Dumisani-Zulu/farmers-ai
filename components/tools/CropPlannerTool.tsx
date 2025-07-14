@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { cropPlannerAI, CropPlanningRequest, CropPlanningResponse } from '../ai/tools/crop-planner';
+import { cropPlannerAI, CropPlanningRequest, CropPlanningResponse } from '../../ai/tools/crop-planner';
 
 interface CropPlannerProps {
   userLocation?: {

@@ -7,7 +7,7 @@ import {
   Bug,
   TestTube
 } from 'lucide-react-native';
-import { DiseaseIdentificationTool } from '@/tools';
+import { DiseaseIdentificationTool, PestManagementTool, SoilAnalysisTool } from '@/components/tools';
 
 type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'soil-analyzer';
 
@@ -36,15 +36,11 @@ export default function ToolsScreen() {
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="px-4 py-4 bg-white border-b border-gray-200">
           <TouchableOpacity onPress={handleBackToMain} className="mb-2">
-            <Text className="text-blue-600 font-medium">← Back</Text>
+            <Text className="text-blue-600 font-medium">Back</Text>
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-900">Plant Disease Identifier</Text>
-          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
         </View>
         <View className="flex-1 items-center justify-center px-4">
-          {/* <Text className="text-gray-500 text-center">
-            AI plant disease identification tool will be available here soon.
-          </Text> */}
           <DiseaseIdentificationTool />
         </View>
       </SafeAreaView>
@@ -55,15 +51,12 @@ export default function ToolsScreen() {
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="px-4 py-4 bg-white border-b border-gray-200">
           <TouchableOpacity onPress={handleBackToMain} className="mb-2">
-            <Text className="text-blue-600 font-medium">← Back</Text>
+            <Text className="text-blue-600 font-medium">Back</Text>
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-900">Pest Identifier</Text>
-          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
         </View>
         <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-gray-500 text-center">
-            AI pest identification tool will be available here soon.
-          </Text>
+          <PestManagementTool />
         </View>
       </SafeAreaView>
     );
@@ -73,15 +66,12 @@ export default function ToolsScreen() {
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="px-4 py-4 bg-white border-b border-gray-200">
           <TouchableOpacity onPress={handleBackToMain} className="mb-2">
-            <Text className="text-blue-600 font-medium">← Back</Text>
+            <Text className="text-blue-600 font-medium">Back</Text>
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-gray-900">Soil Analyzer</Text>
-          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
         </View>
         <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-gray-500 text-center">
-            AI soil analysis tool will be available here soon.
-          </Text>
+          <SoilAnalysisTool />
         </View>
       </SafeAreaView>
     );
@@ -89,14 +79,13 @@ export default function ToolsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="px-4 py-7 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Farm Tools</Text>
+      <View className="px-4 py-4 bg-white border-b border-gray-200">
+        <Text className="text-2xl font-bold text-gray-900 text-center">Farm Tools</Text>
       </View>
 
       <ScrollView className="flex-1 px-4 py-4">
         {/* Quick Access Tools */}
         <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Quick Access</Text>
           <View className="flex-row flex-wrap justify-between">
             <TouchableOpacity 
               className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 

@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { soilAnalysisAI, SoilAnalysisRequest, SoilAnalysisResponse } from '../ai/tools/soil-analysis';
+import { soilAnalysisAI, SoilAnalysisRequest, SoilAnalysisResponse } from '../../ai/tools/soil-analysis';
 
 interface SoilAnalysisProps {
   userLocation?: {

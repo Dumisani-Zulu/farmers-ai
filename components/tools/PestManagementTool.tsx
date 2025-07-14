@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
-import { pestManagementAI, PestIdentificationRequest, PestIdentificationResponse } from '../ai/tools/pest-management';
+import { pestManagementAI, PestIdentificationRequest, PestIdentificationResponse } from '../../ai/tools/pest-management';
 
 interface PestManagementProps {
   userLocation?: {

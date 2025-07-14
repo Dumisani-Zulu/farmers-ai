@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { marketAnalysisAI, MarketAnalysisRequest, MarketAnalysisResponse } from '../ai/tools/market-analysis';
+import { marketAnalysisAI, MarketAnalysisRequest, MarketAnalysisResponse } from '../../ai/tools/market-analysis';
 
 interface MarketAnalysisProps {
   userLocation?: {

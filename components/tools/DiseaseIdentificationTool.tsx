@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
-import { diseaseIdentificationAI, DiseaseIdentificationRequest, DiseaseIdentificationResponse } from '../ai/tools/disease-identification';
+import { diseaseIdentificationAI, DiseaseIdentificationRequest, DiseaseIdentificationResponse } from '../../ai/tools/disease-identification';
 
 interface DiseaseIdentificationProps {
   userLocation?: {
@@ -110,55 +110,6 @@ export const DiseaseIdentificationTool: React.FC<DiseaseIdentificationProps> = (
           )}
         </TouchableOpacity>
       </View>
-
-      <View className="mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-2">
-          Crop Type *
-        </Text>
-        <TextInput
-          className="border border-gray-300 rounded-lg px-3 py-2"
-          placeholder="e.g., Maize, Tomato, Wheat"
-          value={formData.cropType || ''}
-          onChangeText={(text) => handleInputChange('cropType', text)}
-        />
-      </View>
-
-      <View className="mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-2">
-          Disease Symptoms *
-        </Text>
-        <TextInput
-          className="border border-gray-300 rounded-lg px-3 py-2 h-24"
-          placeholder="e.g., Yellow spots on leaves, brown patches, wilting, stunted growth"
-          value={formData.symptoms?.join(', ') || ''}
-          onChangeText={(text) => 
-            handleInputChange('symptoms', text.split(',').map(symptom => symptom.trim()))
-          }
-          multiline
-          textAlignVertical="top"
-        />
-        <Text className="text-xs text-gray-500 mt-1">
-          Separate multiple symptoms with commas
-        </Text>
-      </View>
-
-      <View className="mb-4">
-        <Text className="text-sm font-medium text-gray-700 mb-2">
-          Affected Area (%)
-        </Text>
-        <TextInput
-          className="border border-gray-300 rounded-lg px-3 py-2"
-          placeholder="Percentage of crop affected"
-          value={formData.affectedArea?.toString() || ''}
-          onChangeText={(text) => handleInputChange('affectedArea', parseFloat(text) || 0)}
-          keyboardType="numeric"
-        />
-      </View>
-
-      {/* Environmental Conditions */}
-      <Text className="text-md font-medium text-gray-700 mb-3">
-        Environmental Conditions (optional)
-      </Text>
       
       <View className="grid grid-cols-2 gap-3 mb-4">
         <View>
@@ -472,7 +423,7 @@ export const DiseaseIdentificationTool: React.FC<DiseaseIdentificationProps> = (
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-100 p-4">
+    <ScrollView className="flex-1 bg-gray-100 w-full py-2 px-2">
       <View className="mb-4">
         <Text className="text-2xl font-bold text-gray-800 mb-2">
           Disease Identification
