@@ -11,6 +11,20 @@ import { decode, encode } from 'base-64';
 // Platform check
 import { Platform } from 'react-native';
 
+// TensorFlow.js platform setup for React Native
+if (Platform.OS !== 'web') {
+  // Import TensorFlow.js packages in the correct order
+  Promise.all([
+    import('@tensorflow/tfjs'),
+    import('@tensorflow/tfjs-backend-cpu'),
+    import('@tensorflow/tfjs-react-native')
+  ]).then(() => {
+    console.log('TensorFlow.js React Native platform initialized');
+  }).catch(error => {
+    console.warn('TensorFlow.js React Native platform failed to initialize:', error);
+  });
+}
+
 // Set up global references if needed
 if (Platform.OS !== 'web') {
   // Ensure global is available

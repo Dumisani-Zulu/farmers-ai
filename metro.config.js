@@ -16,6 +16,7 @@ config.resolver = {
     // TensorFlow.js compatibility
     'crypto': require.resolve('expo-crypto'),
   },
+  platforms: ['ios', 'android', 'native', 'web'],
 };
 
 module.exports = config;
