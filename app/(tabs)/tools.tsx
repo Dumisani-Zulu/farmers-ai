@@ -3,257 +3,30 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Calculator, 
-  Ruler, 
-  Droplets, 
-  DollarSign, 
-  Calendar, 
-  TrendingUp, 
-  MapPin, 
   Camera,
-  Thermometer,
-  CloudRain,
-  Wrench,
   Bug,
-  Zap,
   TestTube
 } from 'lucide-react-native';
+import { DiseaseIdentificationTool } from '@/tools';
 
-interface Tool {
-  id: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  category: 'calculator' | 'planning' | 'monitoring' | 'financial' | 'ai-tools';
-  isNew?: boolean;
-}
-
-type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'weed-identifier' | 'soil-analyzer' | 'location-manager';
-
-const tools: Tool[] = [
-  {
-    id: '1',
-    name: 'Field Area Calculator',
-    description: 'Calculate field dimensions and area for planting',
-    icon: <Ruler size={24} color="#3b82f6" />,
-    category: 'calculator',
-  },
-  {
-    id: '2',
-    name: 'Fertilizer Calculator',
-    description: 'Determine optimal fertilizer amounts for your crops',
-    icon: <Calculator size={24} color="#10b981" />,
-    category: 'calculator',
-  },
-  {
-    id: '3',
-    name: 'Irrigation Planner',
-    description: 'Plan and schedule irrigation for maximum efficiency',
-    icon: <Droplets size={24} color="#06b6d4" />,
-    category: 'planning',
-  },
-  {
-    id: '4',
-    name: 'Crop Revenue Calculator',
-    description: 'Estimate potential income from your crops',
-    icon: <DollarSign size={24} color="#f59e0b" />,
-    category: 'financial',
-  },
-  {
-    id: '5',
-    name: 'Planting Calendar',
-    description: 'Optimal planting and harvesting schedule',
-    icon: <Calendar size={24} color="#8b5cf6" />,
-    category: 'planning',
-  },
-  {
-    id: '6',
-    name: 'Growth Tracker',
-    description: 'Monitor and track crop growth progress',
-    icon: <TrendingUp size={24} color="#ec4899" />,
-    category: 'monitoring',
-    isNew: true,
-  },
-  {
-    id: '7',
-    name: 'Field Mapper',
-    description: 'Map and organize your farming areas',
-    icon: <MapPin size={24} color="#ef4444" />,
-    category: 'planning',
-  },
-  {
-    id: '8',
-    name: 'Plant Disease Identifier',
-    description: 'Identify plant diseases using AI-powered photo analysis',
-    icon: <Camera size={24} color="#059669" />,
-    category: 'ai-tools',
-    isNew: true,
-  },
-  {
-    id: '9',
-    name: 'Pest Identifier', 
-    description: 'Identify agricultural pests with AI image recognition',
-    icon: <Bug size={24} color="#ef4444" />,
-    category: 'ai-tools',
-    isNew: true,
-  },
-  {
-    id: '10',
-    name: 'Weed Identifier',
-    description: 'Identify and manage weeds using AI technology',
-    icon: <Zap size={24} color="#10b981" />,
-    category: 'ai-tools',
-    isNew: true,
-  },
-  {
-    id: '11',
-    name: 'AI Soil Analyzer',
-    description: 'Analyze soil health and get improvement recommendations',
-    icon: <TestTube size={24} color="#8b5cf6" />,
-    category: 'ai-tools',
-    isNew: true,
-  },
-  {
-    id: '11a',
-    name: 'Location Manager',
-    description: 'Manage farm locations with smart caching and search',
-    icon: <MapPin size={24} color="#3b82f6" />,
-    category: 'planning',
-    isNew: true,
-  },
-  {
-    id: '12',
-    name: 'Soil Temperature Monitor',
-    description: 'Track soil temperature for optimal planting',
-    icon: <Thermometer size={24} color="#dc2626" />,
-    category: 'monitoring',
-  },
-  {
-    id: '13',
-    name: 'Weather Impact Assessment',
-    description: 'Assess weather impact on crop yield',
-    icon: <CloudRain size={24} color="#6b7280" />,
-    category: 'monitoring',
-  },
-];
-
-const categories = [
-  { id: 'all', name: 'All Tools', icon: <Wrench size={16} color="#6b7280" /> },
-  { id: 'ai-tools', name: 'AI Tools', icon: <TestTube size={16} color="#8b5cf6" /> },
-  { id: 'calculator', name: 'Calculators', icon: <Calculator size={16} color="#10b981" /> },
-  { id: 'planning', name: 'Planning', icon: <Calendar size={16} color="#8b5cf6" /> },
-  { id: 'monitoring', name: 'Monitoring', icon: <TrendingUp size={16} color="#ec4899" /> },
-  { id: 'financial', name: 'Financial', icon: <DollarSign size={16} color="#f59e0b" /> },
-];
-
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case 'ai-tools': return '#8b5cf6';
-    case 'calculator': return '#10b981';
-    case 'planning': return '#8b5cf6';
-    case 'monitoring': return '#ec4899';
-    case 'financial': return '#f59e0b';
-    default: return '#6b7280';
-  }
-};
-
-const ToolCard = ({ tool, onPress }: { tool: Tool; onPress: (toolId: string) => void }) => {
-  console.log('ToolCard rendered for tool:', tool.id, 'onPress type:', typeof onPress);
-  
-  return (
-    <TouchableOpacity 
-      className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex-row items-center"
-      onPress={() => {
-        console.log('ToolCard pressed, tool.id:', tool.id, 'onPress:', typeof onPress);
-        if (typeof onPress === 'function') {
-          onPress(tool.id);
-        } else {
-          console.error('onPress is not a function:', onPress);
-        }
-      }}
-    >
-    <View className="mr-4">
-      {tool.icon}
-    </View>
-    <View className="flex-1">
-      <View className="flex-row items-center mb-1">
-        <Text className="text-lg font-semibold text-gray-900">{tool.name}</Text>
-        {tool.isNew && (
-          <View className="bg-green-500 px-2 py-1 rounded-full ml-2">
-            <Text className="text-xs text-white font-medium">NEW</Text>
-          </View>
-        )}
-      </View>
-      <Text className="text-sm text-gray-600 mb-2">{tool.description}</Text>
-      <View 
-        className="px-2 py-1 rounded-full self-start"
-        style={{ backgroundColor: `${getCategoryColor(tool.category)}20` }}
-      >
-        <Text 
-          className="text-xs font-medium capitalize"
-          style={{ color: getCategoryColor(tool.category) }}
-        >
-          {tool.category}
-        </Text>
-      </View>
-    </View>
-    <View className="ml-2">
-      <View className="bg-gray-100 rounded-lg p-2">
-        <Text className="text-xs font-medium text-gray-700">Open</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-  );
-};
+type ToolScreen = 'main' | 'plant-disease' | 'pest-identifier' | 'soil-analyzer';
 
 export default function ToolsScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentScreen, setCurrentScreen] = useState<ToolScreen>('main');
-
-  const filteredTools = selectedCategory === 'all' 
-    ? tools 
-    : tools.filter(tool => tool.category === selectedCategory);
-
-  const handleToolPress = useCallback((toolId: string) => {
-    console.log('handleToolPress called with toolId:', toolId);
-    console.log('typeof handleToolPress:', typeof handleToolPress);
-    switch (toolId) {
-      case '8': // Plant Disease Identifier
-        setCurrentScreen('plant-disease');
-        break;
-      case '9': // Pest Identifier
-        setCurrentScreen('pest-identifier');
-        break;
-      case '10': // Weed Identifier
-        setCurrentScreen('weed-identifier');
-        break;
-      case '11': // AI Soil Analyzer
-        setCurrentScreen('soil-analyzer');
-        break;
-      case '11a': // Location Manager
-        setCurrentScreen('location-manager');
-        break;
-      default:
-        console.log('Tool not implemented yet:', toolId);
-        break;
-    }
-  }, []);
 
   const handleBackToMain = useCallback(() => {
     setCurrentScreen('main');
   }, []);
 
   const handleDiseaseIdPress = useCallback(() => {
-    console.log('Disease ID pressed');
     setCurrentScreen('plant-disease');
   }, []);
 
   const handlePestIdPress = useCallback(() => {
-    console.log('Pest ID pressed');
     setCurrentScreen('pest-identifier');
   }, []);
 
   const handleSoilAnalyzerPress = useCallback(() => {
-    console.log('Soil Analyzer pressed');
     setCurrentScreen('soil-analyzer');
   }, []);
 
@@ -269,9 +42,10 @@ export default function ToolsScreen() {
           <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
         </View>
         <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-gray-500 text-center">
+          {/* <Text className="text-gray-500 text-center">
             AI plant disease identification tool will be available here soon.
-          </Text>
+          </Text> */}
+          <DiseaseIdentificationTool />
         </View>
       </SafeAreaView>
     );
@@ -289,24 +63,6 @@ export default function ToolsScreen() {
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-gray-500 text-center">
             AI pest identification tool will be available here soon.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-  if (currentScreen === 'weed-identifier') {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="px-4 py-4 bg-white border-b border-gray-200">
-          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
-            <Text className="text-blue-600 font-medium">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-gray-900">Weed Identifier</Text>
-          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
-        </View>
-        <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-gray-500 text-center">
-            AI weed identification tool will be available here soon.
           </Text>
         </View>
       </SafeAreaView>
@@ -330,36 +86,14 @@ export default function ToolsScreen() {
       </SafeAreaView>
     );
   }
-  if (currentScreen === 'location-manager') {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="px-4 py-4 bg-white border-b border-gray-200">
-          <TouchableOpacity onPress={handleBackToMain} className="mb-2">
-            <Text className="text-blue-600 font-medium">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-gray-900">Location Manager</Text>
-          <Text className="text-sm text-gray-600 mt-1">Coming soon</Text>
-        </View>
-        <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-gray-500 text-center">
-            Location management tool will be available here soon.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="px-4 py-4 bg-white border-b border-gray-200">
+      <View className="px-4 py-7 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-900">Farm Tools</Text>
-        <Text className="text-sm text-gray-600 mt-1">{tools.length} tools available</Text>
       </View>
 
       <ScrollView className="flex-1 px-4 py-4">
-        {/* Test Component */}
-        {/* <TestPlantDiseaseAI /> */}
-        
         {/* Quick Access Tools */}
         <View className="mb-6">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Quick Access</Text>
@@ -400,56 +134,13 @@ export default function ToolsScreen() {
             <TouchableOpacity 
               className="bg-white rounded-xl p-4 mb-3 shadow-sm items-center" 
               style={{ width: '48%' }}
-              onPress={() => handleToolPress('1')}
+              onPress={() => console.log('Field Calculator not implemented yet')}
             >
               <Calculator size={32} color="#10b981" />
               <Text className="text-sm font-medium text-gray-900 mt-2 text-center">Field Calculator</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Category Filter */}
-        <View className="mb-4">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                onPress={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg mr-2 flex-row items-center ${
-                  selectedCategory === category.id ? 'bg-green-600' : 'bg-white border border-gray-200'
-                }`}
-              >
-                {category.icon}
-                <Text className={`text-sm font-medium ml-2 ${
-                  selectedCategory === category.id ? 'text-white' : 'text-gray-700'
-                }`}>
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Tools List */}
-        <View>
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            {selectedCategory === 'all' ? 'All Tools' : categories.find(c => c.id === selectedCategory)?.name}
-          </Text>
-          {filteredTools.map(tool => (
-            <ToolCard key={tool.id} tool={tool} onPress={handleToolPress} />
-          ))}
-        </View>
-
-        {/* Add Tool Suggestion */}
-        <TouchableOpacity className="bg-green-50 border-2 border-dashed border-green-300 rounded-xl p-6 mt-4 items-center">
-          <Text className="text-green-600 font-semibold mb-2">Need a specific tool?</Text>
-          <Text className="text-sm text-green-600 text-center mb-3">
-            Suggest a new farming tool and we&apos;ll consider adding it
-          </Text>
-          <TouchableOpacity className="bg-green-600 px-4 py-2 rounded-lg">
-            <Text className="text-white text-sm font-medium">Suggest Tool</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
