@@ -15,7 +15,9 @@
     "ai:test-crops": "npx tsx scripts/test-ai-crops.ts",
     "quota:test": "node scripts/test-quota.js",
     "setup:env": "cp .env.example .env",
-    "fix:tsconfig": "node scripts/fix-tsconfig.js"
+    "fix:tsconfig": "node scripts/fix-tsconfig.js",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
@@ -27,7 +29,7 @@
     "@genkit-ai/googleai": "^1.14.0",
     "@google/generative-ai": "^0.24.1",
     "@lucide/lab": "^0.1.2",
-    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-native-picker/picker": "^2.11.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
@@ -36,7 +38,7 @@
     "@tensorflow/tfjs-backend-cpu": "^4.22.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
     "base-64": "^1.0.0",
-    "expo": "53.0.17",
+    "expo": "53.0.19",
     "expo-auth-session": "^6.2.1",
     "expo-blur": "~14.1.5",
     "expo-camera": "~16.1.10",
