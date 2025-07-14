@@ -385,14 +385,14 @@ export const UserInfoTable: React.FC<UserInfoTableProps> = ({
         )}
         
         {/* Debug Information (only show in development) */}
-        {__DEV__ && (
+        {/* {__DEV__ && (
           <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <Text className="text-yellow-800 font-semibold mb-2">Debug Information</Text>
             <Text className="text-xs text-yellow-700 font-mono">
               {JSON.stringify(userProfile, null, 2)}
             </Text>
           </View>
-        )}
+        )} */}
       </View>
     </ScrollView>
   );
