@@ -1,12 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { IrrigationAIService, IrrigationInput } from '../../../ai/tools';
+import { useLocation } from '../../../hooks/useLocation';
 
 interface IrrigationResult {
   dailyWaterNeed: number;
   weeklyWaterNeed: number;
   irrigationFrequency: string;
   recommendedDuration: string;
+  confidence?: number;
+  analysis?: {
+    cropWaterRequirement: string;
+    soilAnalysis: string;
+    weatherImpact: string;
+    seasonalConsiderations: string;
+    costEstimation?: string;
+    sustainabilityTips: string[];
+    riskFactors: string[];
+    optimizationSuggestions: string[];
+  };
+  schedule?: {
+    morningSession?: string;
+    eveningSession?: string;
+    weeklyPattern: string[];
+  };
+  monitoring?: {
+    soilMoistureThreshold: string;
+    plantStressIndicators: string[];
+    adjustmentTriggers: string[];
+  };
 }
 
 export default function IrrigationCalculator() {
@@ -16,22 +39,70 @@ export default function IrrigationCalculator() {
   const [temperature, setTemperature] = useState('');
   const [humidity, setHumidity] = useState('');
   const [results, setResults] = useState<IrrigationResult | null>(null);
-  const [showCropDropdown, setShowCropDropdown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [useAI, setUseAI] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const cropTypes = ['Maize', 'Wheat', 'Rice', 'Tomatoes', 'Potatoes', 'Beans'];
+  const { currentLocation } = useLocation();
+  const irrigationAI = new IrrigationAIService();
+
   const soilTypes = ['Clay', 'Sandy', 'Loamy', 'Silty'];
 
-  const calculateIrrigation = () => {
+  const calculateIrrigation = async () => {
     if (!cropType || !fieldArea || !soilType || !temperature) {
       Alert.alert('Missing Information', 'Please fill in all required fields');
       return;
     }
 
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (useAI) {
+        // Use AI-powered calculation
+        const input: IrrigationInput = {
+          cropType,
+          fieldArea: parseFloat(fieldArea),
+          soilType,
+          temperature: parseFloat(temperature),
+          humidity: humidity ? parseFloat(humidity) : undefined,
+          location: currentLocation ? {
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            region: currentLocation.city || currentLocation.region
+          } : undefined
+        };
+
+        const recommendation = await irrigationAI.calculateIrrigationRecommendation(input);
+        setResults(recommendation);
+      } else {
+        // Use simple calculation (existing logic)
+        const simpleResult = calculateSimpleIrrigation();
+        setResults(simpleResult);
+      }
+    } catch (error) {
+      console.error('Error calculating irrigation:', error);
+      setError('Failed to calculate irrigation requirements');
+      Alert.alert(
+        'Calculation Error', 
+        'Failed to calculate irrigation requirements. Please try again or use simple mode.',
+        [
+          { text: 'Try Simple Mode', onPress: () => setUseAI(false) },
+          { text: 'Retry', onPress: calculateIrrigation },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateSimpleIrrigation = (): IrrigationResult => {
     const area = parseFloat(fieldArea);
     const temp = parseFloat(temperature);
     const hum = parseFloat(humidity) || 50;
 
-    // Simple calculation logic (in real app, this would be more sophisticated)
+    // Simple calculation logic
     let baseWaterNeed = 25; // liters per square meter per day
 
     // Adjust based on crop type
@@ -92,12 +163,12 @@ export default function IrrigationCalculator() {
       duration = '15-20 minutes';
     }
 
-    setResults({
+    return {
       dailyWaterNeed,
       weeklyWaterNeed,
       irrigationFrequency: frequency,
       recommendedDuration: duration
-    });
+    };
   };
 
   const resetCalculator = () => {
@@ -107,7 +178,8 @@ export default function IrrigationCalculator() {
     setTemperature('');
     setHumidity('');
     setResults(null);
-    setShowCropDropdown(false);
+    setError(null);
+    setUseAI(true);
   };
 
   return (
@@ -116,50 +188,40 @@ export default function IrrigationCalculator() {
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900 mb-2">Irrigation Calculator</Text>
           <Text className="text-gray-600">
-            Calculate optimal water requirements for your crops
+            Calculate optimal water requirements for your crops using AI
           </Text>
         </View>
 
+        {/* AI Toggle */}
+        <View className="flex-row items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+          <View className="flex-1">
+            <Text className="text-gray-900 font-medium">AI-Powered Analysis</Text>
+            <Text className="text-gray-600 text-sm">Get comprehensive irrigation insights</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setUseAI(!useAI)}
+            className={`w-12 h-6 rounded-full ${useAI ? 'bg-blue-500' : 'bg-gray-300'}`}
+          >
+            <View className={`w-5 h-5 rounded-full bg-white mt-0.5 ${useAI ? 'ml-6' : 'ml-0.5'}`} />
+          </TouchableOpacity>
+        </View>
+
+        {error && (
+          <View className="mb-4 p-3 bg-red-100 rounded-lg">
+            <Text className="text-red-800">{error}</Text>
+          </View>
+        )}
+
         <View className="space-y-4 mb-6">
           {/* Crop Type */}
-          <View className="relative z-50">
+          <View>
             <Text className="text-gray-700 font-medium mb-2">Crop Type *</Text>
-            <View className="relative">
-              <TouchableOpacity
-                onPress={() => setShowCropDropdown(!showCropDropdown)}
-                className="border border-gray-300 rounded-lg px-4 py-3 flex-row justify-between items-center bg-white w-full"
-              >
-                <Text className={`${cropType ? 'text-gray-900' : 'text-gray-500'}`}>
-                  {cropType || 'Select crop type'}
-                </Text>
-                <Ionicons 
-                  name={showCropDropdown ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color="#6B7280" 
-                />
-              </TouchableOpacity>
-              
-              {showCropDropdown && (
-                <View 
-                  className="absolute bottom-full left-0 right-0 w-full border border-gray-300 rounded-lg mb-1 z-50 shadow-lg"
-                  style={{ backgroundColor: 'white' }}
-                >
-                  {cropTypes.map((crop) => (
-                    <TouchableOpacity
-                      key={crop}
-                      onPress={() => {
-                        setCropType(crop);
-                        setShowCropDropdown(false);
-                      }}
-                      className="px-4 py-3 border-b border-gray-100 last:border-b-0 w-full"
-                      style={{ backgroundColor: 'white' }}
-                    >
-                      <Text className="text-gray-900">{crop}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
+            <TextInput
+              value={cropType}
+              onChangeText={setCropType}
+              placeholder="Enter crop type (e.g., Maize, Tomatoes, Rice)"
+              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+            />
           </View>
 
           {/* Field Area */}
@@ -225,12 +287,20 @@ export default function IrrigationCalculator() {
           </View>
         </View>
 
-        <View className="flex-1 gap-4 mb-6">
+        <View className="flex-row gap-4 mb-6">
           <TouchableOpacity
             onPress={calculateIrrigation}
-            className="flex-1 bg-blue-500 rounded-lg px-4 py-2 items-center"
+            disabled={isLoading}
+            className={`flex-1 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'} rounded-lg p-4 items-center`}
           >
-            <Text className="text-lg text-white font-bold mt-1">Calculate</Text>
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Ionicons name="calculator-outline" size={24} color="white" />
+            )}
+            <Text className="text-white font-medium mt-1">
+              {isLoading ? 'Calculating...' : 'Calculate'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -244,9 +314,18 @@ export default function IrrigationCalculator() {
 
         {results && (
           <View className="bg-blue-50 rounded-lg p-4">
-            <Text className="text-xl font-bold text-gray-900 mb-4">Irrigation Requirements</Text>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-gray-900">Irrigation Requirements</Text>
+              {results.confidence && (
+                <View className="bg-green-100 px-2 py-1 rounded">
+                  <Text className="text-green-800 text-sm font-medium">
+                    {Math.round(results.confidence * 100)}% confidence
+                  </Text>
+                </View>
+              )}
+            </View>
             
-            <View className="space-y-3">
+            <View className="space-y-3 mb-4">
               <View className="flex-row justify-between items-center">
                 <Text className="text-gray-700">Daily Water Need:</Text>
                 <Text className="font-bold text-blue-600">{results.dailyWaterNeed} L</Text>
@@ -268,10 +347,69 @@ export default function IrrigationCalculator() {
               </View>
             </View>
 
+            {/* AI Analysis Section */}
+            {results.analysis && (
+              <View className="border-t border-gray-200 pt-4">
+                <Text className="text-lg font-bold text-gray-900 mb-3">AI Analysis</Text>
+                
+                <View className="space-y-3">
+                  <View>
+                    <Text className="font-medium text-gray-800">Crop Water Requirement:</Text>
+                    <Text className="text-gray-600 text-sm">{results.analysis.cropWaterRequirement}</Text>
+                  </View>
+                  
+                  <View>
+                    <Text className="font-medium text-gray-800">Soil Analysis:</Text>
+                    <Text className="text-gray-600 text-sm">{results.analysis.soilAnalysis}</Text>
+                  </View>
+                  
+                  <View>
+                    <Text className="font-medium text-gray-800">Weather Impact:</Text>
+                    <Text className="text-gray-600 text-sm">{results.analysis.weatherImpact}</Text>
+                  </View>
+
+                  {results.analysis.sustainabilityTips.length > 0 && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Sustainability Tips:</Text>
+                      {results.analysis.sustainabilityTips.map((tip, index) => (
+                        <Text key={index} className="text-gray-600 text-sm">• {tip}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {/* Schedule Section */}
+            {results.schedule && (
+              <View className="border-t border-gray-200 pt-4 mt-4">
+                <Text className="text-lg font-bold text-gray-900 mb-3">Irrigation Schedule</Text>
+                
+                {results.schedule.morningSession && (
+                  <View className="mb-2">
+                    <Text className="font-medium text-gray-800">Morning Session:</Text>
+                    <Text className="text-gray-600 text-sm">{results.schedule.morningSession}</Text>
+                  </View>
+                )}
+                
+                {results.schedule.eveningSession && (
+                  <View className="mb-2">
+                    <Text className="font-medium text-gray-800">Evening Session:</Text>
+                    <Text className="text-gray-600 text-sm">{results.schedule.eveningSession}</Text>
+                  </View>
+                )}
+                
+                <View>
+                  <Text className="font-medium text-gray-800">Weekly Pattern:</Text>
+                  <Text className="text-gray-600 text-sm">{results.schedule.weeklyPattern.join(', ')}</Text>
+                </View>
+              </View>
+            )}
+
             <View className="mt-4 p-3 bg-yellow-100 rounded-lg">
               <Text className="text-sm text-yellow-800">
-                💡 These calculations are estimates. Consider local weather conditions, 
-                crop growth stage, and soil moisture levels for optimal irrigation.
+                💡 {useAI ? 'AI-powered comprehensive analysis' : 'Basic calculation'}. 
+                Consider local weather conditions, crop growth stage, and soil moisture levels for optimal irrigation.
               </Text>
             </View>
           </View>

@@ -6,6 +6,9 @@
 // Configuration
 export { getAIConfig, defaultAIConfig, type AIConfig } from './config';
 
+// Tools
+export * from './tools';
+
 // Services
 export { getGeminiService, GeminiAIService } from './services/gemini-service';
 export { getTensorFlowService, TensorFlowService } from './services/tensorflow-service';
