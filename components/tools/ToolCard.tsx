@@ -22,15 +22,13 @@ export default function ToolCard({ title, description, icon, color, onPress }: T
           className="w-12 h-12 rounded-full items-center justify-center mr-4"
           style={{ backgroundColor: color + '20' }}
         >
-          <Ionicons name={icon} size={24} color={color} />
+          <Ionicons name={icon} size={45} color={color} />
         </View>
         
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-gray-900 mb-1">{title}</Text>
+          <Text className="text-lg font-bold text-black mb-1">{title}</Text>
           <Text className="text-gray-600 text-sm">{description}</Text>
         </View>
-        
-        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
       </View>
     </TouchableOpacity>
   );
