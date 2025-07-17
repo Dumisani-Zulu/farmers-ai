@@ -291,7 +291,7 @@ export default function IrrigationCalculator() {
           <TouchableOpacity
             onPress={calculateIrrigation}
             disabled={isLoading}
-            className={`flex-1 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'} rounded-lg p-4 items-center`}
+            className={`flex-1 ${isLoading ? 'bg-gray-400' : 'bg-blue-500'} rounded-lg px-4 py-2 items-center`}
           >
             {isLoading ? (
               <ActivityIndicator color="white" />
@@ -305,7 +305,7 @@ export default function IrrigationCalculator() {
 
           <TouchableOpacity
             onPress={resetCalculator}
-            className="flex-1 bg-gray-500 rounded-lg p-4 items-center"
+            className="flex-1 bg-gray-500 rounded-lg px-4 py-2 items-center"
           >
             <Ionicons name="refresh-outline" size={24} color="white" />
             <Text className="text-white font-medium mt-1">Reset</Text>
