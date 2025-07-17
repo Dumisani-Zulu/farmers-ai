@@ -122,12 +122,12 @@ export default function IrrigationCalculator() {
 
         <View className="space-y-4 mb-6">
           {/* Crop Type */}
-          <View>
+          <View className="relative z-50">
             <Text className="text-gray-700 font-medium mb-2">Crop Type *</Text>
             <View className="relative">
               <TouchableOpacity
                 onPress={() => setShowCropDropdown(!showCropDropdown)}
-                className="border border-gray-300 rounded-lg px-4 py-3 flex-row justify-between items-center bg-white"
+                className="border border-gray-300 rounded-lg px-4 py-3 flex-row justify-between items-center bg-white w-full"
               >
                 <Text className={`${cropType ? 'text-gray-900' : 'text-gray-500'}`}>
                   {cropType || 'Select crop type'}
@@ -140,7 +140,10 @@ export default function IrrigationCalculator() {
               </TouchableOpacity>
               
               {showCropDropdown && (
-                <View className="absolute bottom-full left-0 right-0 bg-white border border-gray-300 rounded-lg mb-1 z-10 shadow-lg">
+                <View 
+                  className="absolute bottom-full left-0 right-0 w-full border border-gray-300 rounded-lg mb-1 z-50 shadow-lg"
+                  style={{ backgroundColor: 'white' }}
+                >
                   {cropTypes.map((crop) => (
                     <TouchableOpacity
                       key={crop}
@@ -148,7 +151,8 @@ export default function IrrigationCalculator() {
                         setCropType(crop);
                         setShowCropDropdown(false);
                       }}
-                      className="px-4 py-3 border-b border-gray-100 last:border-b-0"
+                      className="px-4 py-3 border-b border-gray-100 last:border-b-0 w-full"
+                      style={{ backgroundColor: 'white' }}
                     >
                       <Text className="text-gray-900">{crop}</Text>
                     </TouchableOpacity>
