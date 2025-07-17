@@ -1,6 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
-import { ThumbsUp, Calendar, CheckCircle, MoreVertical } from 'lucide-react-native';
+import {
+  ThumbsUp,
+  Calendar,
+  CheckCircle,
+  MoreVertical,
+} from 'lucide-react-native';
 import { ForumReply } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,11 +22,13 @@ interface ForumReplyCardProps {
 
 const formatTimeAgo = (timestamp: any) => {
   if (!timestamp) return '';
-  
+
   const now = new Date();
   const replyTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  const diffInMinutes = Math.floor((now.getTime() - replyTime.getTime()) / (1000 * 60));
-  
+  const diffInMinutes = Math.floor(
+    (now.getTime() - replyTime.getTime()) / (1000 * 60)
+  );
+
   if (diffInMinutes < 1) return 'Just now';
   if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
   if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
@@ -37,7 +44,7 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
   onEdit,
   onDelete,
   showActions = false,
-  isPostAuthor = false
+  isPostAuthor = false,
 }) => {
   const { user } = useAuth();
   const isLiked = user ? reply.likedBy.includes(user.uid) : false;
@@ -45,37 +52,33 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
 
   const handleMoreActions = () => {
     const actions = [];
-    
+
     if (isAuthor) {
       actions.push({ text: 'Edit', onPress: onEdit });
       actions.push({ text: 'Delete', onPress: onDelete, style: 'destructive' });
     }
-    
+
     if (isPostAuthor && onMarkAsAnswer) {
-      actions.push({ 
-        text: reply.isAnswer ? 'Unmark as Answer' : 'Mark as Answer', 
-        onPress: onMarkAsAnswer 
+      actions.push({
+        text: reply.isAnswer ? 'Unmark as Answer' : 'Mark as Answer',
+        onPress: onMarkAsAnswer,
       });
     }
 
     if (actions.length > 0) {
-      Alert.alert(
-        'Reply Actions',
-        'Choose an action',
-        [
-          ...actions.map(action => ({
-            text: action.text,
-            onPress: action.onPress,
-            style: action.style as any
-          })),
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
+      Alert.alert('Reply Actions', 'Choose an action', [
+        ...actions.map((action) => ({
+          text: action.text,
+          onPress: action.onPress,
+          style: action.style as any,
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   };
 
   return (
-    <View 
+    <View
       className={`bg-white rounded-lg p-4 mb-3 border-l-4 ${
         reply.isAnswer ? 'border-green-500 bg-green-50' : 'border-gray-200'
       }`}
@@ -86,25 +89,24 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
           {reply.isAnswer && (
             <View className="flex-row items-center mb-2">
               <CheckCircle size={16} color="#10b981" />
-              <Text className="text-sm text-green-600 ml-1 font-medium">Accepted Answer</Text>
+              <Text className="text-sm text-green-600 ml-1 font-medium">
+                Accepted Answer
+              </Text>
             </View>
           )}
-          
-            <View className="flex-row items-center mb-1">
-              <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
+
+          <View className="flex-row items-center mb-1">
+            <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
               <Text className="text-xs text-white font-medium">
                 {reply.author.displayName?.charAt(0).toUpperCase() || 'U'}
               </Text>
-              </View>
-                <Text className="text-sm text-gray-600 flex-1">
-                {reply.author.displayName || 'Anonymous'}
-              </Text>
             </View>
-          {/* <Text className="text-sm text-gray-800 leading-relaxed">
-            {reply.content}
-          </Text> */}
+            <Text className="text-sm text-gray-600 flex-1">
+              {reply.author.displayName || 'Anonymous'}
+            </Text>
+          </View>
         </View>
-        
+
         {showActions && (
           <TouchableOpacity onPress={handleMoreActions} className="p-1">
             <MoreVertical size={16} color="#6b7280" />
@@ -113,16 +115,11 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
       </View>
 
       {/* Author and Time */}
-      <View className="flex-row items-center justify-between mb-3">
-        {/* <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
-          <Text className="text-xs text-white font-medium">
-            {reply.author.displayName?.charAt(0).toUpperCase() || 'U'}
-          </Text>
-        </View> */}
+      <View className="flex mb-3">
         <Text className="text-sm text-gray-800 leading-relaxed">
-            {reply.content}
-          </Text>
-        <View className="flex-row items-center">
+          {reply.content}
+        </Text>
+        <View className="flex-row items-center mt-2">
           <Calendar size={12} color="#6b7280" />
           <Text className="text-xs text-gray-500 ml-1">
             {formatTimeAgo(reply.createdAt)}
@@ -136,12 +133,16 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
           onPress={isLiked ? onUnlike : onLike}
           className="flex-row items-center"
         >
-          <ThumbsUp 
-            size={14} 
-            color={isLiked ? '#ef4444' : '#6b7280'} 
+          <ThumbsUp
+            size={14}
+            color={isLiked ? '#ef4444' : '#6b7280'}
             fill={isLiked ? '#ef4444' : 'none'}
           />
-          <Text className={`text-sm ml-1 ${isLiked ? 'text-red-500' : 'text-gray-600'}`}>
+          <Text
+            className={`text-sm ml-1 ${
+              isLiked ? 'text-red-500' : 'text-gray-600'
+            }`}
+          >
             {reply.likes}
           </Text>
         </TouchableOpacity>
