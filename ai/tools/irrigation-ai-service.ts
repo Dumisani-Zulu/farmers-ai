@@ -59,13 +59,25 @@ export class IrrigationAIService {
       // Get TensorFlow prediction for water requirements
       const tensorFlowPrediction = await this.getTensorFlowPrediction(input);
 
-      // Get comprehensive analysis from Gemini
-      const geminiAnalysis = await this.getGeminiAnalysis(input, tensorFlowPrediction);
+      // Try to get Gemini analysis, but don't fail if it's overloaded
+      let geminiAnalysis;
+      try {
+        geminiAnalysis = await this.getGeminiAnalysis(input, tensorFlowPrediction);
+      } catch (geminiError) {
+        console.warn('Gemini AI unavailable, using fallback analysis:', geminiError);
+        geminiAnalysis = this.getFallbackAnalysis(input, tensorFlowPrediction);
+      }
 
       // Combine results
       return this.combineRecommendations(input, tensorFlowPrediction, geminiAnalysis);
     } catch (error) {
       console.error('Error calculating irrigation recommendation:', error);
+      
+      // If everything fails, provide a basic recommendation
+      if (error instanceof Error && error.message.includes('overloaded')) {
+        return this.getBasicRecommendation(input);
+      }
+      
       throw new Error('Failed to calculate irrigation recommendation');
     }
   }
@@ -319,76 +331,120 @@ export class IrrigationAIService {
   }
 
   private async getGeminiAnalysis(input: IrrigationInput, prediction: any): Promise<any> {
-    const prompt = `
-    As an agricultural irrigation expert, provide a comprehensive analysis for the following irrigation scenario:
+    // Simplified prompt to reduce model load
+    const prompt = `Irrigation analysis for ${input.cropType} on ${input.soilType} soil, ${input.fieldArea}m², ${input.temperature}°C:
 
-    Crop: ${input.cropType}
-    Field Area: ${input.fieldArea} m²
-    Soil Type: ${input.soilType}
-    Temperature: ${input.temperature}°C
-    Humidity: ${input.humidity || 50}%
-    Predicted Daily Water Need: ${prediction.dailyWaterNeed} liters
-    Location: ${input.location?.region || 'Not specified'}
+Key considerations:
+- Water efficiency for ${input.cropType}
+- ${input.soilType} soil drainage impact
+- Temperature ${input.temperature}°C effects
+- Field size ${input.fieldArea}m²
 
-    Please provide detailed analysis covering:
+Provide brief analysis on:
+1. Crop water needs
+2. Soil impact on watering
+3. Weather considerations
+4. 3 sustainability tips
+5. 3 risk factors
+6. 3 optimization tips
 
-    1. Crop Water Requirement Analysis:
-       - Specific water needs for ${input.cropType}
-       - Growth stage considerations
-       - Optimal water distribution timing
+Keep response concise and practical.`;
 
-    2. Soil Analysis Impact:
-       - How ${input.soilType} soil affects water retention
-       - Drainage characteristics
-       - Root zone considerations
+    try {
+      const response = await this.geminiService.generateText(prompt);
+      return this.parseGeminiResponse(response);
+    } catch (error) {
+      console.warn('Gemini AI unavailable, using fallback analysis:', error);
+      
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('GEMINI_OVERLOADED')) {
+          console.log('🔄 Gemini is overloaded, using intelligent fallback...');
+        } else if (error.message.includes('GEMINI_TIMEOUT')) {
+          console.log('⏱️ Gemini request timed out, using fallback...');
+        }
+      }
+      
+      // Return comprehensive fallback analysis when Gemini fails
+      return this.getFallbackAnalysis(input, prediction);
+    }
+  }
 
-    3. Weather Impact Assessment:
-       - Effect of ${input.temperature}°C temperature
-       - Humidity impact on water loss
-       - Evapotranspiration rates
+  private getBasicRecommendation(input: IrrigationInput): IrrigationRecommendation {
+    // Ultra-simple fallback when everything fails
+    const basicWaterNeed = this.calculateBaseWaterNeed(input);
+    const weeklyNeed = basicWaterNeed * 7;
+    
+    return {
+      dailyWaterNeed: Math.round(basicWaterNeed),
+      weeklyWaterNeed: Math.round(weeklyNeed),
+      irrigationFrequency: 'Daily',
+      recommendedDuration: '20-30 minutes',
+      confidence: 0.7,
+      analysis: {
+        cropWaterRequirement: `${input.cropType} needs approximately ${Math.round(basicWaterNeed)} liters per day.`,
+        soilAnalysis: `${input.soilType} soil requires standard irrigation practices.`,
+        weatherImpact: `Current temperature ${input.temperature}°C affects water needs.`,
+        seasonalConsiderations: 'Monitor weather conditions and adjust as needed.',
+        costEstimation: `Estimated cost: $${(basicWaterNeed * 0.002).toFixed(2)} per day.`,
+        sustainabilityTips: ['Use efficient irrigation methods', 'Monitor soil moisture', 'Water during cooler hours'],
+        riskFactors: ['Over-watering', 'Weather changes', 'Soil drainage issues'],
+        optimizationSuggestions: ['Install timers', 'Check soil regularly', 'Adjust for weather']
+      },
+      schedule: {
+        morningSession: '7:00 AM - 8:00 AM',
+        eveningSession: '6:00 PM - 7:00 PM',
+        weeklyPattern: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      },
+      monitoring: {
+        soilMoistureThreshold: '20-25%',
+        plantStressIndicators: ['Wilting', 'Yellow leaves', 'Slow growth'],
+        adjustmentTriggers: ['Dry soil', 'Hot weather', 'Plant stress signs']
+      }
+    };
+  }
 
-    4. Seasonal Considerations:
-       - Current season adjustments
-       - Upcoming weather pattern considerations
-       - Long-term planning recommendations
-
-    5. Cost Estimation:
-       - Estimated water costs
-       - Energy costs for irrigation
-       - Cost optimization strategies
-
-    6. Sustainability Tips (provide 3-5 specific tips):
-       - Water conservation methods
-       - Soil health maintenance
-       - Environmental impact reduction
-
-    7. Risk Factors (identify 3-4 key risks):
-       - Over-watering risks
-       - Under-watering consequences
-       - Weather-related risks
-       - Soil degradation risks
-
-    8. Optimization Suggestions (provide 4-6 actionable suggestions):
-       - Technology recommendations
-       - Timing optimizations
-       - Monitoring strategies
-       - Efficiency improvements
-
-    9. Irrigation Schedule:
-       - Best times for morning sessions
-       - Evening session recommendations
-       - Weekly pattern suggestions
-
-    10. Monitoring Guidelines:
-        - Soil moisture thresholds
-        - Plant stress indicators to watch
-        - When to adjust irrigation
-
-    Format the response as a structured JSON object that can be easily parsed.
-    `;
-
-    const response = await this.geminiService.generateText(prompt);
-    return this.parseGeminiResponse(response);
+  private getFallbackAnalysis(input: IrrigationInput, prediction: any): any {
+    // Comprehensive fallback when Gemini AI is unavailable
+    const soilType = input.soilType.toLowerCase();
+    
+    return {
+      cropWaterRequirement: `${input.cropType} requires ${prediction.dailyWaterNeed} liters per day. This crop benefits from consistent moisture levels and deep, infrequent watering to encourage strong root development.`,
+      
+      soilAnalysis: soilType === 'sandy' 
+        ? `Sandy soil drains quickly, requiring more frequent watering. Water penetrates easily but retention is low, making daily irrigation necessary.`
+        : soilType === 'clay'
+        ? `Clay soil retains water well but drains slowly. Less frequent, deeper watering prevents waterlogging while ensuring adequate moisture.`
+        : `${input.soilType} soil provides good water retention and drainage balance. Monitor soil moisture to maintain optimal levels.`,
+      
+      weatherImpact: input.temperature > 30
+        ? `High temperature (${input.temperature}°C) increases evaporation. Early morning watering minimizes water loss and plant stress.`
+        : input.temperature < 15
+        ? `Cool temperature (${input.temperature}°C) reduces water needs. Adjust irrigation frequency to prevent overwatering.`
+        : `Moderate temperature (${input.temperature}°C) provides good growing conditions. Maintain consistent watering schedule.`,
+      
+      seasonalConsiderations: `Current seasonal conditions require careful monitoring. Adjust watering based on rainfall patterns and temperature fluctuations.`,
+      
+      costEstimation: `Estimated daily water cost: $${(prediction.dailyWaterNeed * 0.002).toFixed(2)}. Consider drip irrigation for 30-50% water savings.`,
+      
+      sustainabilityTips: [
+        'Install drip irrigation system for precise water delivery',
+        'Use mulch to reduce evaporation by up to 70%',
+        'Collect rainwater for irrigation during dry periods'
+      ],
+      
+      riskFactors: [
+        soilType === 'clay' ? 'Risk of waterlogging in clay soil' : 'Risk of rapid water loss in well-draining soil',
+        input.temperature > 35 ? 'Heat stress risk during peak temperatures' : 'Weather variability affecting water needs',
+        'Over-watering leading to root problems and nutrient leaching'
+      ],
+      
+      optimizationSuggestions: [
+        'Install soil moisture sensors for precise irrigation timing',
+        'Water during early morning hours (6-8 AM) for best efficiency',
+        'Monitor plant indicators: leaf color, growth rate, and soil condition'
+      ]
+    };
   }
 
   private parseGeminiResponse(response: string): any {
@@ -410,26 +466,31 @@ export class IrrigationAIService {
   private parseStructuredResponse(response: string): any {
     // Fallback parsing for non-JSON responses
     return {
-      cropWaterRequirement: this.extractSection(response, 'Crop Water Requirement', 'This crop requires careful water management...'),
-      soilAnalysis: this.extractSection(response, 'Soil Analysis', 'The soil type affects water retention significantly...'),
-      weatherImpact: this.extractSection(response, 'Weather Impact', 'Current weather conditions impact irrigation needs...'),
-      seasonalConsiderations: this.extractSection(response, 'Seasonal', 'Seasonal adjustments are important for optimal results...'),
-      costEstimation: this.extractSection(response, 'Cost', 'Estimated irrigation costs and optimization strategies...'),
+      cropWaterRequirement: this.extractSection(response, 'Crop Water Requirement', 'This crop requires careful water management based on its specific characteristics and environmental conditions.'),
+      soilAnalysis: this.extractSection(response, 'Soil Analysis', 'The soil type affects water retention significantly. Consider soil drainage and root zone depth for optimal irrigation.'),
+      weatherImpact: this.extractSection(response, 'Weather Impact', 'Current weather conditions impact irrigation needs. Monitor temperature and humidity for best results.'),
+      seasonalConsiderations: this.extractSection(response, 'Seasonal', 'Seasonal adjustments are important for optimal results. Consider current season and upcoming weather patterns.'),
+      costEstimation: this.extractSection(response, 'Cost', 'Estimated irrigation costs depend on water source, energy requirements, and system efficiency.'),
       sustainabilityTips: this.extractListItems(response, 'Sustainability', [
         'Use drip irrigation for water efficiency',
         'Monitor soil moisture regularly',
-        'Implement rainwater harvesting'
+        'Implement rainwater harvesting',
+        'Choose drought-resistant crop varieties',
+        'Apply mulch to reduce evaporation'
       ]),
       riskFactors: this.extractListItems(response, 'Risk', [
         'Over-watering leading to root rot',
         'Inconsistent watering patterns',
-        'Weather unpredictability'
+        'Weather unpredictability',
+        'Soil degradation from poor drainage'
       ]),
       optimizationSuggestions: this.extractListItems(response, 'Optimization', [
         'Install soil moisture sensors',
         'Use weather-based irrigation controllers',
         'Implement precision irrigation techniques',
-        'Regular system maintenance'
+        'Regular system maintenance',
+        'Monitor plant health indicators',
+        'Adjust timing based on growth stages'
       ])
     };
   }
@@ -441,17 +502,26 @@ export class IrrigationAIService {
   }
 
   private extractListItems(text: string, sectionName: string, fallback: string[]): string[] {
-    const sectionRegex = new RegExp(`${sectionName}[^:]*:([\\s\\S]*?)(?=\\n\\d+\\.|\\n[A-Z][^:]*:|$)`, 'i');
-    const sectionMatch = text.match(sectionRegex);
-    
-    if (sectionMatch) {
-      const items = sectionMatch[1].match(/[-•*]\s*([^\n]+)/g);
-      if (items) {
-        return items.map(item => item.replace(/^[-•*]\s*/, '').trim());
+    try {
+      if (!text || !sectionName) {
+        return fallback || [];
       }
+      
+      const sectionRegex = new RegExp(`${sectionName}[^:]*:([\\s\\S]*?)(?=\\n\\d+\\.|\\n[A-Z][^:]*:|$)`, 'i');
+      const sectionMatch = text.match(sectionRegex);
+      
+      if (sectionMatch) {
+        const items = sectionMatch[1].match(/[-•*]\s*([^\n]+)/g);
+        if (items && items.length > 0) {
+          return items.map(item => item.replace(/^[-•*]\s*/, '').trim()).filter(item => item.length > 0);
+        }
+      }
+      
+      return fallback || [];
+    } catch (error) {
+      console.warn(`Error extracting list items for ${sectionName}:`, error);
+      return fallback || [];
     }
-    
-    return fallback;
   }
 
   private combineRecommendations(
@@ -507,14 +577,20 @@ export class IrrigationAIService {
   }
 
   private generateWeeklyPattern(frequency: string): string[] {
-    if (frequency.includes('Daily')) {
+    if (!frequency) {
+      return ['Monday', 'Wednesday', 'Friday']; // Default pattern
+    }
+    
+    if (frequency.includes('Daily') || frequency.includes('daily')) {
       return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     } else if (frequency.includes('2-3 days')) {
       return ['Monday', 'Wednesday', 'Friday', 'Sunday'];
     } else if (frequency.includes('2 days')) {
       return ['Monday', 'Wednesday', 'Friday'];
+    } else if (frequency.includes('Twice daily') || frequency.includes('twice daily')) {
+      return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     } else {
-      return ['Monday', 'Wednesday', 'Friday'];
+      return ['Monday', 'Wednesday', 'Friday']; // Default pattern
     }
   }
 

@@ -368,7 +368,7 @@ export default function IrrigationCalculator() {
                     <Text className="text-gray-600 text-sm">{results.analysis.weatherImpact}</Text>
                   </View>
 
-                  {results.analysis.sustainabilityTips.length > 0 && (
+                  {results.analysis.sustainabilityTips && results.analysis.sustainabilityTips.length > 0 && (
                     <View>
                       <Text className="font-medium text-gray-800">Sustainability Tips:</Text>
                       {results.analysis.sustainabilityTips.map((tip, index) => (
@@ -401,7 +401,12 @@ export default function IrrigationCalculator() {
                 
                 <View>
                   <Text className="font-medium text-gray-800">Weekly Pattern:</Text>
-                  <Text className="text-gray-600 text-sm">{results.schedule.weeklyPattern.join(', ')}</Text>
+                  <Text className="text-gray-600 text-sm">
+                    {results.schedule.weeklyPattern && results.schedule.weeklyPattern.length > 0 
+                      ? results.schedule.weeklyPattern.join(', ')
+                      : 'Daily'
+                    }
+                  </Text>
                 </View>
               </View>
             )}

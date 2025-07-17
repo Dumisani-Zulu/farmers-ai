@@ -34,10 +34,17 @@ export class GeminiAIService {
       console.log('🤖 Using model:', this.config.gemini.model);
       console.log('🔑 API key configured:', !!this.config.gemini.apiKey);
       
-      const result = await this.model.generateContent(prompt);
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 15000); // 15 second timeout
+      });
+      
+      const generatePromise = this.model.generateContent(prompt);
+      const result = await Promise.race([generatePromise, timeoutPromise]);
+      
       console.log('📥 Received result from Gemini');
       
-      const response = await result.response;
+      const response = await (result as any).response;
       const text = response.text();
       console.log('✅ Successfully extracted text, length:', text.length);
       
@@ -51,6 +58,15 @@ export class GeminiAIService {
           message: error.message,
           stack: error.stack
         });
+        
+        // Check for specific overload error
+        if (error.message.includes('503') || error.message.includes('overloaded')) {
+          throw new Error('GEMINI_OVERLOADED: The model is temporarily overloaded. Please try again later.');
+        }
+        
+        if (error.message.includes('timeout')) {
+          throw new Error('GEMINI_TIMEOUT: Request timed out. Please try again with a shorter prompt.');
+        }
       }
       
       throw new Error(`Failed to generate AI response: ${error instanceof Error ? error.message : String(error)}`);
