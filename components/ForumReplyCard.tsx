@@ -90,9 +90,19 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
             </View>
           )}
           
-          <Text className="text-sm text-gray-800 leading-relaxed">
+            <View className="flex-row items-center mb-1">
+              <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
+              <Text className="text-xs text-white font-medium">
+                {reply.author.displayName?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+              </View>
+                <Text className="text-sm text-gray-600 flex-1">
+                {reply.author.displayName || 'Anonymous'}
+              </Text>
+            </View>
+          {/* <Text className="text-sm text-gray-800 leading-relaxed">
             {reply.content}
-          </Text>
+          </Text> */}
         </View>
         
         {showActions && (
@@ -103,15 +113,15 @@ export const ForumReplyCard: React.FC<ForumReplyCardProps> = ({
       </View>
 
       {/* Author and Time */}
-      <View className="flex-row items-center mb-3">
-        <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
+      <View className="flex-row items-center justify-between mb-3">
+        {/* <View className="w-6 h-6 bg-blue-600 rounded-full items-center justify-center mr-2">
           <Text className="text-xs text-white font-medium">
             {reply.author.displayName?.charAt(0).toUpperCase() || 'U'}
           </Text>
-        </View>
-        <Text className="text-sm text-gray-600 flex-1">
-          {reply.author.displayName || 'Anonymous'}
-        </Text>
+        </View> */}
+        <Text className="text-sm text-gray-800 leading-relaxed">
+            {reply.content}
+          </Text>
         <View className="flex-row items-center">
           <Calendar size={12} color="#6b7280" />
           <Text className="text-xs text-gray-500 ml-1">
