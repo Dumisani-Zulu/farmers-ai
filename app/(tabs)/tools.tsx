@@ -111,7 +111,7 @@ export default function ToolsScreen() {
               className="text-blue-500 font-medium text-lg"
               onPress={closeTool}
             >
-              Done
+              Back
             </Text>
           </View>
           

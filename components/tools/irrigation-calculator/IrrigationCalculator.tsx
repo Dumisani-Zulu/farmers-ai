@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface IrrigationResult {
@@ -16,6 +16,7 @@ export default function IrrigationCalculator() {
   const [temperature, setTemperature] = useState('');
   const [humidity, setHumidity] = useState('');
   const [results, setResults] = useState<IrrigationResult | null>(null);
+  const [showCropDropdown, setShowCropDropdown] = useState(false);
 
   const cropTypes = ['Maize', 'Wheat', 'Rice', 'Tomatoes', 'Potatoes', 'Beans'];
   const soilTypes = ['Clay', 'Sandy', 'Loamy', 'Silty'];
@@ -106,6 +107,7 @@ export default function IrrigationCalculator() {
     setTemperature('');
     setHumidity('');
     setResults(null);
+    setShowCropDropdown(false);
   };
 
   return (
@@ -122,26 +124,37 @@ export default function IrrigationCalculator() {
           {/* Crop Type */}
           <View>
             <Text className="text-gray-700 font-medium mb-2">Crop Type *</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {cropTypes.map((crop) => (
-                <TouchableOpacity
-                  key={crop}
-                  onPress={() => setCropType(crop)}
-                  className={`px-4 py-2 rounded-full border ${
-                    cropType === crop
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'bg-white border-gray-300'
-                  }`}
-                >
-                  <Text
-                    className={`${
-                      cropType === crop ? 'text-white' : 'text-gray-700'
-                    }`}
-                  >
-                    {crop}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View className="relative">
+              <TouchableOpacity
+                onPress={() => setShowCropDropdown(!showCropDropdown)}
+                className="border border-gray-300 rounded-lg px-4 py-3 flex-row justify-between items-center bg-white"
+              >
+                <Text className={`${cropType ? 'text-gray-900' : 'text-gray-500'}`}>
+                  {cropType || 'Select crop type'}
+                </Text>
+                <Ionicons 
+                  name={showCropDropdown ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color="#6B7280" 
+                />
+              </TouchableOpacity>
+              
+              {showCropDropdown && (
+                <View className="absolute bottom-full left-0 right-0 bg-white border border-gray-300 rounded-lg mb-1 z-10 shadow-lg">
+                  {cropTypes.map((crop) => (
+                    <TouchableOpacity
+                      key={crop}
+                      onPress={() => {
+                        setCropType(crop);
+                        setShowCropDropdown(false);
+                      }}
+                      className="px-4 py-3 border-b border-gray-100 last:border-b-0"
+                    >
+                      <Text className="text-gray-900">{crop}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
 
@@ -208,13 +221,12 @@ export default function IrrigationCalculator() {
           </View>
         </View>
 
-        <View className="flex-row gap-4 mb-6">
+        <View className="flex-1 gap-4 mb-6">
           <TouchableOpacity
             onPress={calculateIrrigation}
-            className="flex-1 bg-blue-500 rounded-lg p-4 items-center"
+            className="flex-1 bg-blue-500 rounded-lg px-4 py-2 items-center"
           >
-            <Ionicons name="calculator-outline" size={24} color="white" />
-            <Text className="text-white font-medium mt-1">Calculate</Text>
+            <Text className="text-lg text-white font-bold mt-1">Calculate</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

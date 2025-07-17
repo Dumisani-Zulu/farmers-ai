@@ -66,21 +66,21 @@ export default function DiseaseIdentifier() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-6 items-center">
-          <Ionicons name="image-outline" size={60} color="#9CA3AF" />
-          <Text className="text-gray-500 mt-2 text-center">
+        <View className="border-2 border-dashed border-black rounded-lg p-8 mb-6 items-center">
+          <Ionicons name="image-outline" size={60} color="black" />
+          <Text className="text-black mt-2 text-center">
             No image selected
           </Text>
         </View>
       )}
 
-      <View className="flex-row gap-4 mb-6">
+      <View className="flex-row gap-4 mb-4 space-x-4">
         <TouchableOpacity
           onPress={pickImage}
           className="flex-1 bg-blue-500 rounded-lg p-4 items-center"
         >
           <Ionicons name="images-outline" size={24} color="white" />
-          <Text className="text-white font-medium mt-1">Gallery</Text>
+          <Text className="text-white font-medium mt-1">Upload Image</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -95,7 +95,7 @@ export default function DiseaseIdentifier() {
       <TouchableOpacity
         onPress={analyzeImage}
         disabled={!selectedImage || isAnalyzing}
-        className={`rounded-lg p-4 items-center ${
+        className={`rounded-lg px-4 py-2 items-center ${
           selectedImage && !isAnalyzing ? 'bg-purple-500' : 'bg-gray-300'
         }`}
       >
@@ -103,8 +103,7 @@ export default function DiseaseIdentifier() {
           <Text className="text-white font-medium">Analyzing...</Text>
         ) : (
           <>
-            <Ionicons name="search-outline" size={24} color="white" />
-            <Text className="text-white font-medium mt-1">Identify Disease</Text>
+            <Text className="text-lg text-black font-bold mt-1">Identify Disease</Text>
           </>
         )}
       </TouchableOpacity>
