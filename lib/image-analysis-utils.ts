@@ -1,12 +1,30 @@
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 
 /**
  * Convert a local image URI to a data URI with base64 encoding.
  * @param uri Local file URI of the image.
  */
 export async function convertImageToDataUri(uri: string): Promise<string> {
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-  return `data:image/jpeg;base64,${base64}`;
+  if (Platform.OS === 'web') {
+    // Fallback for web: fetch the image and convert to data URI
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to convert blob to data URI'));
+      };
+      reader.readAsDataURL(blob);
+    });
+  } else {
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+    return `data:image/jpeg;base64,${base64}`;
+  }
 }
 
 /**
