@@ -370,10 +370,42 @@ export default function IrrigationCalculator() {
 
                   {results.analysis.sustainabilityTips && results.analysis.sustainabilityTips.length > 0 && (
                     <View>
-                      <Text className="font-medium text-gray-800">Sustainability Tips:</Text>
+                      <Text className="font-medium text-gray-800">Sustainability Tips for {cropType}:</Text>
                       {results.analysis.sustainabilityTips.map((tip, index) => (
                         <Text key={index} className="text-gray-600 text-sm">• {tip}</Text>
                       ))}
+                    </View>
+                  )}
+
+                  {results.analysis.riskFactors && results.analysis.riskFactors.length > 0 && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Risk Factors for {cropType}:</Text>
+                      {results.analysis.riskFactors.map((risk, index) => (
+                        <Text key={index} className="text-red-600 text-sm">⚠️ {risk}</Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {results.analysis.optimizationSuggestions && results.analysis.optimizationSuggestions.length > 0 && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Optimization Tips for {cropType}:</Text>
+                      {results.analysis.optimizationSuggestions.map((suggestion, index) => (
+                        <Text key={index} className="text-blue-600 text-sm">💡 {suggestion}</Text>
+                      ))}
+                    </View>
+                  )}
+
+                  {results.analysis.costEstimation && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Cost Estimation:</Text>
+                      <Text className="text-gray-600 text-sm">{results.analysis.costEstimation}</Text>
+                    </View>
+                  )}
+
+                  {results.analysis.seasonalConsiderations && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Seasonal Considerations:</Text>
+                      <Text className="text-gray-600 text-sm">{results.analysis.seasonalConsiderations}</Text>
                     </View>
                   )}
                 </View>
@@ -383,7 +415,7 @@ export default function IrrigationCalculator() {
             {/* Schedule Section */}
             {results.schedule && (
               <View className="border-t border-gray-200 pt-4 mt-4">
-                <Text className="text-lg font-bold text-gray-900 mb-3">Irrigation Schedule</Text>
+                <Text className="text-lg font-bold text-gray-900 mb-3">Irrigation Schedule for {cropType}</Text>
                 
                 {results.schedule.morningSession && (
                   <View className="mb-2">
@@ -411,10 +443,43 @@ export default function IrrigationCalculator() {
               </View>
             )}
 
+            {/* Monitoring Section */}
+            {results.monitoring && (
+              <View className="border-t border-gray-200 pt-4 mt-4">
+                <Text className="text-lg font-bold text-gray-900 mb-3">Monitoring Guide for {cropType}</Text>
+                
+                <View className="space-y-3">
+                  <View>
+                    <Text className="font-medium text-gray-800">Soil Moisture Threshold:</Text>
+                    <Text className="text-gray-600 text-sm">{results.monitoring.soilMoistureThreshold}</Text>
+                  </View>
+                  
+                  {results.monitoring.plantStressIndicators && results.monitoring.plantStressIndicators.length > 0 && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Watch for {cropType} Stress Signs:</Text>
+                      {results.monitoring.plantStressIndicators.map((indicator, index) => (
+                        <Text key={index} className="text-orange-600 text-sm">👁️ {indicator}</Text>
+                      ))}
+                    </View>
+                  )}
+                  
+                  {results.monitoring.adjustmentTriggers && results.monitoring.adjustmentTriggers.length > 0 && (
+                    <View>
+                      <Text className="font-medium text-gray-800">Adjust Irrigation When:</Text>
+                      {results.monitoring.adjustmentTriggers.map((trigger, index) => (
+                        <Text key={index} className="text-purple-600 text-sm">🔄 {trigger}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
             <View className="mt-4 p-3 bg-yellow-100 rounded-lg">
               <Text className="text-sm text-yellow-800">
-                💡 {useAI ? 'AI-powered comprehensive analysis' : 'Basic calculation'}. 
-                Consider local weather conditions, crop growth stage, and soil moisture levels for optimal irrigation.
+                💡 {useAI ? `AI-powered analysis tailored specifically for ${cropType || 'your crop'}` : 'Basic calculation'}. 
+                {cropType && useAI ? ` Recommendations are customized for ${cropType} growth patterns, soil requirements, and optimal irrigation practices.` : ''}
+                {' '}Consider current weather conditions, crop growth stage, and soil moisture levels for best results.
               </Text>
             </View>
           </View>

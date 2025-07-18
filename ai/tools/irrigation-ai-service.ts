@@ -331,41 +331,66 @@ export class IrrigationAIService {
   }
 
   private async getGeminiAnalysis(input: IrrigationInput, prediction: any): Promise<any> {
-    // Simplified prompt to reduce model load
-    const prompt = `Irrigation analysis for ${input.cropType} on ${input.soilType} soil, ${input.fieldArea}m², ${input.temperature}°C:
+    // Crop-specific and detailed prompt
+    const prompt = `You are an expert agricultural irrigation consultant specializing in ${input.cropType} cultivation. Provide specific irrigation recommendations.
 
-Key considerations:
-- Water efficiency for ${input.cropType}
-- ${input.soilType} soil drainage impact
-- Temperature ${input.temperature}°C effects
-- Field size ${input.fieldArea}m²
+CROP: ${input.cropType}
+FIELD SIZE: ${input.fieldArea} m²
+SOIL TYPE: ${input.soilType}
+TEMPERATURE: ${input.temperature}°C
+HUMIDITY: ${input.humidity || 50}%
+PREDICTED WATER NEED: ${prediction.dailyWaterNeed} L/day
 
-Provide brief analysis on:
-1. Crop water needs
-2. Soil impact on watering
-3. Weather considerations
-4. 3 sustainability tips
-5. 3 risk factors
-6. 3 optimization tips
+Provide detailed, ${input.cropType}-specific analysis:
 
-Keep response concise and practical.`;
+1. Crop Water Requirements for ${input.cropType}:
+   - Growth stage water needs
+   - Root depth and water uptake patterns
+   - Critical irrigation periods
+
+2. ${input.soilType} Soil Impact on ${input.cropType}:
+   - Water retention for this crop
+   - Drainage considerations
+   - Root development implications
+
+3. Weather Effects on ${input.cropType}:
+   - Temperature stress indicators
+   - Humidity impact on disease risk
+   - Evapotranspiration rates
+
+4. ${input.cropType} Sustainability Tips (3-4 specific):
+   - Water conservation methods for this crop
+   - Disease prevention through irrigation
+   - Yield optimization techniques
+
+5. ${input.cropType} Risk Factors (3 specific):
+   - Irrigation-related diseases
+   - Growth stage vulnerabilities
+   - Quality issues from poor irrigation
+
+6. ${input.cropType} Optimization (3-4 tips):
+   - Best irrigation methods for this crop
+   - Timing optimizations
+   - Technology recommendations
+
+Focus on ${input.cropType}-specific characteristics, growth patterns, and irrigation requirements.`;
 
     try {
       const response = await this.geminiService.generateText(prompt);
       return this.parseGeminiResponse(response);
     } catch (error) {
-      console.warn('Gemini AI unavailable, using fallback analysis:', error);
+      console.warn('Gemini AI unavailable, using crop-specific fallback analysis:', error);
       
       // Check for specific error types
       if (error instanceof Error) {
         if (error.message.includes('GEMINI_OVERLOADED')) {
-          console.log('🔄 Gemini is overloaded, using intelligent fallback...');
+          console.log('🔄 Gemini is overloaded, using intelligent crop-specific fallback...');
         } else if (error.message.includes('GEMINI_TIMEOUT')) {
-          console.log('⏱️ Gemini request timed out, using fallback...');
+          console.log('⏱️ Gemini request timed out, using crop-specific fallback...');
         }
       }
       
-      // Return comprehensive fallback analysis when Gemini fails
+      // Return comprehensive crop-specific fallback analysis when Gemini fails
       return this.getFallbackAnalysis(input, prediction);
     }
   }
@@ -405,45 +430,24 @@ Keep response concise and practical.`;
   }
 
   private getFallbackAnalysis(input: IrrigationInput, prediction: any): any {
-    // Comprehensive fallback when Gemini AI is unavailable
+    // Get comprehensive crop-specific data
+    const cropData = this.getCropSpecificData(input.cropType.toLowerCase());
     const soilType = input.soilType.toLowerCase();
     
     return {
-      cropWaterRequirement: `${input.cropType} requires ${prediction.dailyWaterNeed} liters per day. This crop benefits from consistent moisture levels and deep, infrequent watering to encourage strong root development.`,
+      cropWaterRequirement: `${input.cropType} requires ${prediction.dailyWaterNeed} liters per day for ${input.fieldArea}m². ${cropData.growthStages} ${cropData.rootCharacteristics} Critical irrigation periods: ${cropData.criticalPeriods}`,
       
-      soilAnalysis: soilType === 'sandy' 
-        ? `Sandy soil drains quickly, requiring more frequent watering. Water penetrates easily but retention is low, making daily irrigation necessary.`
-        : soilType === 'clay'
-        ? `Clay soil retains water well but drains slowly. Less frequent, deeper watering prevents waterlogging while ensuring adequate moisture.`
-        : `${input.soilType} soil provides good water retention and drainage balance. Monitor soil moisture to maintain optimal levels.`,
+      soilAnalysis: `${input.soilType} soil ${cropData.soilCompatibility} for ${input.cropType} cultivation. ${cropData.soilAdvice} ${this.getSoilSpecificAdvice(soilType, input.cropType)} Drainage rate: ${cropData.drainageNeeds}`,
       
-      weatherImpact: input.temperature > 30
-        ? `High temperature (${input.temperature}°C) increases evaporation. Early morning watering minimizes water loss and plant stress.`
-        : input.temperature < 15
-        ? `Cool temperature (${input.temperature}°C) reduces water needs. Adjust irrigation frequency to prevent overwatering.`
-        : `Moderate temperature (${input.temperature}°C) provides good growing conditions. Maintain consistent watering schedule.`,
+      weatherImpact: `At ${input.temperature}°C, ${input.cropType} ${cropData.temperatureResponse}. ${cropData.humidityAdvice} ${this.getTemperatureSpecificAdvice(input.temperature, input.cropType)} Optimal growing temperature: ${cropData.optimalTemp}°C`,
       
-      seasonalConsiderations: `Current seasonal conditions require careful monitoring. Adjust watering based on rainfall patterns and temperature fluctuations.`,
+      seasonalConsiderations: `${cropData.seasonalTips} ${this.getSeasonalAdvice(input.cropType)} Current season recommendations: ${cropData.currentSeasonAdvice}`,
       
-      costEstimation: `Estimated daily water cost: $${(prediction.dailyWaterNeed * 0.002).toFixed(2)}. Consider drip irrigation for 30-50% water savings.`,
+      costEstimation: `Estimated monthly water cost for ${input.fieldArea}m² ${input.cropType} field: $${Math.round(prediction.dailyWaterNeed * 30 * 0.002)}. ${cropData.costOptimization} Expected water savings with drip irrigation: ${cropData.dripSavings}`,
       
-      sustainabilityTips: [
-        'Install drip irrigation system for precise water delivery',
-        'Use mulch to reduce evaporation by up to 70%',
-        'Collect rainwater for irrigation during dry periods'
-      ],
-      
-      riskFactors: [
-        soilType === 'clay' ? 'Risk of waterlogging in clay soil' : 'Risk of rapid water loss in well-draining soil',
-        input.temperature > 35 ? 'Heat stress risk during peak temperatures' : 'Weather variability affecting water needs',
-        'Over-watering leading to root problems and nutrient leaching'
-      ],
-      
-      optimizationSuggestions: [
-        'Install soil moisture sensors for precise irrigation timing',
-        'Water during early morning hours (6-8 AM) for best efficiency',
-        'Monitor plant indicators: leaf color, growth rate, and soil condition'
-      ]
+      sustainabilityTips: cropData.sustainabilityTips,
+      riskFactors: cropData.riskFactors,
+      optimizationSuggestions: cropData.optimizationTips
     };
   }
 
@@ -624,6 +628,330 @@ Keep response concise and practical.`;
       ...commonIndicators,
       ...(cropSpecific[cropType as keyof typeof cropSpecific] || [])
     ];
+  }
+
+  private getCropSpecificData(cropType: string): any {
+    const cropDatabase: { [key: string]: any } = {
+      'rice': {
+        waterNeed: 40,
+        growthStages: 'Rice requires 3 distinct irrigation phases: flooding during vegetative stage (2-5cm water depth), reduced water during flowering, and intermittent irrigation during grain filling.',
+        rootCharacteristics: 'Shallow root system (15-20cm) requires surface water management rather than deep irrigation.',
+        criticalPeriods: 'Transplanting (1-2 weeks), Tillering (3-5 weeks), Panicle initiation (8-9 weeks), and Grain filling (11-13 weeks)',
+        soilCompatibility: 'Clay soil is ideal for water retention',
+        soilAdvice: 'Maintain 2-5cm standing water depth. Use bunds to prevent water loss.',
+        drainageNeeds: 'Controlled drainage with ability to maintain standing water',
+        temperatureResponse: 'grows optimally but may need additional water for cooling',
+        humidityAdvice: 'High humidity (70-80%) is beneficial for rice cultivation and reduces water stress',
+        optimalTemp: '25-30',
+        seasonalTips: 'Plant during monsoon season to utilize natural rainfall. Reduce irrigation in winter months.',
+        currentSeasonAdvice: 'Monitor for pests in standing water during warm months',
+        costOptimization: 'Use alternate wetting and drying (AWD) to save 15-30% water costs',
+        dripSavings: 'Not suitable - rice requires flooding irrigation system',
+        sustainabilityTips: [
+          'Implement System of Rice Intensification (SRI) for 40% water savings',
+          'Use alternate wetting and drying to reduce methane emissions',
+          'Install water level gauges for precise water management',
+          'Collect rainwater in farm ponds for dry season irrigation'
+        ],
+        riskFactors: [
+          'Standing water increases risk of bacterial leaf blight and blast disease',
+          'Overwatering can cause iron toxicity and root rot',
+          'Water stagnation attracts pests like stem borers and rice water weevil'
+        ],
+        optimizationTips: [
+          'Use laser land leveling for uniform water distribution',
+          'Apply silicon fertilizer to improve water use efficiency',
+          'Monitor water pH (6.0-7.0) for optimal nutrient uptake',
+          'Install automated water level control systems'
+        ]
+      },
+      'tomatoes': {
+        waterNeed: 30,
+        growthStages: 'Tomatoes need consistent moisture during all stages, with increased water during flowering and fruit development. Reduce before harvest.',
+        rootCharacteristics: 'Deep taproot (60-90cm) with extensive lateral roots. Benefits from deep, infrequent watering.',
+        criticalPeriods: 'Transplanting (0-2 weeks), First flowering (4-6 weeks), Fruit setting (6-10 weeks), and Fruit ripening (10-14 weeks)',
+        soilCompatibility: 'requires well-draining soil to prevent root diseases',
+        soilAdvice: 'Ensure excellent drainage. Raised beds recommended for heavy soils.',
+        drainageNeeds: 'Fast drainage essential - waterlogging causes root rot within 24 hours',
+        temperatureResponse: 'may experience heat stress, increase watering frequency and provide shade',
+        humidityAdvice: 'Moderate humidity (60-65%) prevents fungal diseases like early blight and septoria',
+        optimalTemp: '18-25',
+        seasonalTips: 'Increase watering during fruit development. Reduce irrigation 2 weeks before harvest to concentrate flavors.',
+        currentSeasonAdvice: 'Use mulch to maintain consistent soil moisture and prevent cracking',
+        costOptimization: 'Drip irrigation reduces water costs by 30-50% compared to overhead watering',
+        dripSavings: '40-60% water savings with drip irrigation',
+        sustainabilityTips: [
+          'Install drip irrigation to deliver water directly to root zone',
+          'Use organic mulch to retain soil moisture and suppress weeds',
+          'Collect rainwater for irrigation during dry periods',
+          'Plant determinate varieties to reduce overall water requirements'
+        ],
+        riskFactors: [
+          'Irregular watering causes blossom end rot and fruit cracking',
+          'Overhead watering promotes fungal diseases like early and late blight',
+          'Water stress during flowering reduces fruit set by up to 50%'
+        ],
+        optimizationTips: [
+          'Water at soil level using drip lines or soaker hoses',
+          'Maintain consistent soil moisture at 60-70% field capacity',
+          'Install soil moisture sensors to automate irrigation timing',
+          'Use calcium-rich water or supplements to prevent blossom end rot'
+        ]
+      },
+      'maize': {
+        waterNeed: 25,
+        growthStages: 'Maize has three critical water periods: emergence (0-3 weeks), tasseling/silking (8-10 weeks), and grain filling (10-14 weeks).',
+        rootCharacteristics: 'Extensive root system reaching 1.5-2m depth. Can access deep soil moisture but needs surface irrigation during critical periods.',
+        criticalPeriods: 'Germination (0-2 weeks), Tasseling/Silking (8-10 weeks - most critical), and Grain filling (10-14 weeks)',
+        soilCompatibility: 'performs well in most soil types with good drainage',
+        soilAdvice: 'Ensure adequate drainage to prevent waterlogging during heavy rains.',
+        drainageNeeds: 'Good drainage required - tolerates brief waterlogging but not extended periods',
+        temperatureResponse: 'requires additional water for transpiration cooling and stress prevention',
+        humidityAdvice: 'Monitor for fungal diseases (rust, smut) in high humidity conditions',
+        optimalTemp: '20-30',
+        seasonalTips: 'Time planting with rainy season. Critical irrigation during silk emergence regardless of season.',
+        currentSeasonAdvice: 'Increase irrigation frequency during grain filling for maximum yield',
+        costOptimization: 'Furrow irrigation provides good water efficiency at lower cost than sprinklers',
+        dripSavings: '25-40% water savings with drip irrigation systems',
+        sustainabilityTips: [
+          'Use furrow irrigation for efficient water distribution',
+          'Plant drought-resistant hybrid varieties to reduce water needs',
+          'Time planting to coincide with rainy season',
+          'Implement conservation tillage to improve soil water retention'
+        ],
+        riskFactors: [
+          'Water stress during tasseling can reduce yield by 25-50%',
+          'Overwatering causes nitrogen leaching and reduced nutrient uptake',
+          'Poor drainage during grain filling promotes ear rot diseases'
+        ],
+        optimizationTips: [
+          'Focus irrigation during critical growth stages rather than uniform schedule',
+          'Use soil moisture sensors to determine irrigation timing',
+          'Apply water slowly to prevent runoff and ensure deep penetration',
+          'Combine with appropriate nitrogen application for optimal water use efficiency'
+        ]
+      },
+      'wheat': {
+        waterNeed: 22,
+        growthStages: 'Wheat needs moderate water during tillering, critical water during stem elongation and grain filling, minimal water at maturity.',
+        rootCharacteristics: 'Deep root system (1-1.5m) allows access to subsoil moisture. Drought tolerance increases with root development.',
+        criticalPeriods: 'Germination (0-2 weeks), Tillering (4-8 weeks), Stem elongation (8-12 weeks), and Grain filling (12-16 weeks)',
+        soilCompatibility: 'adapts well to various soil types including heavier soils',
+        soilAdvice: 'Can tolerate heavier soils better than other cereals. Ensure good drainage during wet periods.',
+        drainageNeeds: 'Moderate drainage needs - more tolerant of wet conditions than other cereals',
+        temperatureResponse: 'benefits from cooler temperatures, reduced water stress',
+        humidityAdvice: 'Monitor for rust diseases in humid conditions, especially during grain filling',
+        optimalTemp: '15-20',
+        seasonalTips: 'Reduce irrigation as crop approaches maturity to prevent lodging and facilitate harvest.',
+        currentSeasonAdvice: 'Time final irrigation to avoid extending crop maturity unnecessarily',
+        costOptimization: 'Strategic irrigation timing reduces total water costs by focusing on critical periods',
+        dripSavings: '20-35% water savings possible with precision irrigation systems',
+        sustainabilityTips: [
+          'Use precision irrigation scheduling based on growth stages',
+          'Plant early maturing varieties to utilize winter/spring moisture',
+          'Implement no-till practices to conserve soil moisture',
+          'Use weather-based irrigation controllers to optimize timing'
+        ],
+        riskFactors: [
+          'Late season irrigation can delay maturity and increase lodging risk',
+          'Excessive irrigation during grain filling promotes fungal diseases',
+          'Water stress during grain filling reduces grain weight and quality'
+        ],
+        optimizationTips: [
+          'Irrigate based on soil moisture levels rather than fixed schedules',
+          'Avoid irrigation 2-3 weeks before anticipated harvest',
+          'Focus irrigation during stem elongation and early grain filling',
+          'Use nitrogen management in conjunction with irrigation for optimal results'
+        ]
+      },
+      'potatoes': {
+        waterNeed: 20,
+        growthStages: 'Potatoes need consistent moisture throughout growth, with critical periods during tuber initiation and bulking.',
+        rootCharacteristics: 'Shallow root system (30-45cm) requires frequent irrigation. Most roots in top 30cm of soil.',
+        criticalPeriods: 'Emergence (0-4 weeks), Tuber initiation (4-8 weeks - most critical), Tuber bulking (8-12 weeks), and Maturation (12-16 weeks)',
+        soilCompatibility: 'requires well-draining, loose soil for proper tuber development',
+        soilAdvice: 'Sandy loam ideal. Heavy soils need amendments for proper drainage and tuber shape.',
+        drainageNeeds: 'Excellent drainage essential - waterlogged soil causes tuber rot and deformed potatoes',
+        temperatureResponse: 'needs consistent watering as heat increases water demand significantly',
+        humidityAdvice: 'Ensure good air circulation to prevent late blight in humid conditions',
+        optimalTemp: '15-20',
+        seasonalTips: 'Maintain consistent soil moisture to prevent growth cracks and hollow heart. Reduce water gradually before harvest.',
+        currentSeasonAdvice: 'Hill soil around plants to prevent tuber exposure and maintain moisture',
+        costOptimization: 'Drip irrigation provides precise water control and reduces disease pressure',
+        dripSavings: '30-50% water savings with drip irrigation and mulching',
+        sustainabilityTips: [
+          'Use drip irrigation for precise water delivery to root zone',
+          'Apply organic mulch to maintain consistent soil moisture',
+          'Hill plants properly to conserve moisture and protect tubers',
+          'Harvest rainwater for irrigation during dry periods'
+        ],
+        riskFactors: [
+          'Irregular watering causes growth cracks, hollow heart, and misshapen tubers',
+          'Overwatering promotes bacterial soft rot and fungal diseases',
+          'Water stress during tuber bulking severely reduces yield and quality'
+        ],
+        optimizationTips: [
+          'Maintain consistent soil moisture at 65-75% field capacity',
+          'Reduce irrigation 2 weeks before harvest to improve storage quality',
+          'Use soil moisture monitoring to prevent over or under-watering',
+          'Time irrigation to avoid wet foliage during disease-prone periods'
+        ]
+      }
+    };
+
+    // Default data for unknown crops
+    const defaultData = {
+      waterNeed: 25,
+      growthStages: `Monitor ${cropType} growth stages for optimal watering timing`,
+      rootCharacteristics: 'Root characteristics vary by crop - monitor soil moisture at appropriate depths',
+      criticalPeriods: 'Germination, flowering, and fruit/grain development typically require consistent moisture',
+      soilCompatibility: 'requires appropriate soil drainage for optimal growth',
+      soilAdvice: 'Ensure soil drainage matches crop requirements',
+      drainageNeeds: 'Good drainage typically required for most crops',
+      temperatureResponse: 'may require adjusted watering frequency based on temperature stress',
+      humidityAdvice: 'Monitor for disease pressure in high humidity conditions',
+      optimalTemp: '20-25',
+      seasonalTips: `Adjust irrigation for ${cropType} based on local growing season and weather patterns`,
+      currentSeasonAdvice: 'Monitor current weather conditions and adjust irrigation accordingly',
+      costOptimization: 'Consider efficient irrigation methods to reduce water costs',
+      dripSavings: '20-40% water savings possible with efficient irrigation systems',
+      sustainabilityTips: [
+        'Use efficient irrigation methods appropriate for crop type',
+        'Monitor soil moisture regularly to optimize water use',
+        'Consider drought-resistant varieties if available',
+        'Implement water conservation practices suitable for the crop'
+      ],
+      riskFactors: [
+        'Over or under-watering can reduce yield and quality',
+        'Poor irrigation timing can stress plants during critical growth periods',
+        'Inadequate drainage can promote disease development'
+      ],
+      optimizationTips: [
+        'Use soil moisture monitoring for precision irrigation timing',
+        'Time irrigation based on crop growth stages and weather conditions',
+        'Consider crop-specific irrigation methods and technologies',
+        'Integrate irrigation with appropriate fertilization practices'
+      ]
+    };
+
+    return cropDatabase[cropType] || defaultData;
+  }
+
+  private getSoilSpecificAdvice(soilType: string, cropType: string): string {
+    const soilCropMatrix: { [key: string]: { [key: string]: string } } = {
+      'sandy': {
+        'rice': 'Sandy soil is challenging for rice - consider soil amendments or puddling to improve water retention.',
+        'tomatoes': 'Sandy soil provides excellent drainage for tomatoes but requires more frequent irrigation.',
+        'maize': 'Sandy soil allows good root development for maize but needs careful moisture management.',
+        'wheat': 'Sandy soil works well for wheat with proper irrigation timing.',
+        'potatoes': 'Sandy soil is ideal for potato tuber development and harvest.',
+        'default': 'Sandy soil drains quickly, requiring more frequent but lighter irrigation applications.'
+      },
+      'clay': {
+        'rice': 'Clay soil is perfect for rice cultivation with excellent water retention for flooding.',
+        'tomatoes': 'Clay soil requires drainage improvements for tomatoes - consider raised beds.',
+        'maize': 'Clay soil can be challenging for maize - ensure proper drainage during wet periods.',
+        'wheat': 'Clay soil works well for wheat with its tolerance for heavier soils.',
+        'potatoes': 'Clay soil is problematic for potatoes - amendments needed for proper tuber development.',
+        'default': 'Clay soil retains water well but may require drainage improvements for optimal crop growth.'
+      },
+      'loamy': {
+        'rice': 'Loamy soil works for rice but may need puddling for water retention.',
+        'tomatoes': 'Loamy soil is excellent for tomatoes with good drainage and water retention.',
+        'maize': 'Loamy soil is ideal for maize providing good drainage and nutrient retention.',
+        'wheat': 'Loamy soil provides optimal conditions for wheat growth.',
+        'potatoes': 'Loamy soil is perfect for potatoes with ideal drainage and structure.',
+        'default': 'Loamy soil provides excellent balance of drainage and water retention for most crops.'
+      },
+      'silty': {
+        'rice': 'Silty soil works well for rice with good water retention capabilities.',
+        'tomatoes': 'Silty soil may need drainage improvements for tomatoes to prevent disease.',
+        'maize': 'Silty soil provides good conditions for maize with adequate moisture retention.',
+        'wheat': 'Silty soil works well for wheat with good water and nutrient retention.',
+        'potatoes': 'Silty soil may compact easily - monitor for proper tuber development.',
+        'default': 'Silty soil provides good water retention but may need attention to drainage and compaction.'
+      }
+    };
+
+    const soilAdvice = soilCropMatrix[soilType];
+    return soilAdvice ? (soilAdvice[cropType.toLowerCase()] || soilAdvice['default']) : 'Monitor soil drainage and water retention for optimal crop performance.';
+  }
+
+  private getTemperatureSpecificAdvice(temperature: number, cropType: string): string {
+    const tempCropMatrix: { [key: string]: { hot: string, cold: string, optimal: string } } = {
+      'rice': {
+        hot: 'High temperatures increase water loss - maintain deeper water levels and consider shade.',
+        cold: 'Cold temperatures slow growth - reduce irrigation frequency and avoid cold water.',
+        optimal: 'Optimal temperatures support efficient water use and growth.'
+      },
+      'tomatoes': {
+        hot: 'Heat stress requires increased irrigation frequency and mulching to cool soil.',
+        cold: 'Cool temperatures reduce water needs - avoid overwatering which promotes disease.',
+        optimal: 'Ideal temperatures allow efficient water uptake and transpiration.'
+      },
+      'maize': {
+        hot: 'High temperatures increase transpiration - ensure adequate water during tasseling.',
+        cold: 'Cold weather slows growth - reduce irrigation and avoid waterlogged conditions.',
+        optimal: 'Favorable temperatures support optimal water use efficiency.'
+      },
+      'wheat': {
+        hot: 'Warm temperatures may accelerate maturity - adjust irrigation timing accordingly.',
+        cold: 'Cool weather is beneficial - standard irrigation schedules work well.',
+        optimal: 'Ideal growing conditions support efficient water use.'
+      },
+      'potatoes': {
+        hot: 'Heat stress affects tuber quality - increase irrigation frequency and use mulch.',
+        cold: 'Cold temperatures slow growth - reduce irrigation to prevent disease.',
+        optimal: 'Optimal temperatures support consistent tuber development.'
+      }
+    };
+
+    const cropAdvice = tempCropMatrix[cropType.toLowerCase()] || {
+      hot: 'High temperatures increase water needs - adjust irrigation frequency accordingly.',
+      cold: 'Cool temperatures reduce water needs - avoid overwatering.',
+      optimal: 'Current temperatures support normal irrigation schedules.'
+    };
+
+    if (temperature > 30) return cropAdvice.hot;
+    if (temperature < 15) return cropAdvice.cold;
+    return cropAdvice.optimal;
+  }
+
+  private getSeasonalAdvice(cropType: string): string {
+    const month = new Date().getMonth() + 1;
+    const season = month >= 6 && month <= 8 ? 'summer' : 
+                   (month >= 12 || month <= 2) ? 'winter' : 'spring_fall';
+
+    const seasonalAdvice: { [key: string]: { [key: string]: string } } = {
+      'rice': {
+        summer: 'Peak growing season - maintain optimal water levels and monitor for pest activity.',
+        winter: 'Reduced growth period - lower irrigation frequency but maintain minimum moisture.',
+        spring_fall: 'Planting or harvest season - adjust irrigation for establishment or crop maturation.'
+      },
+      'tomatoes': {
+        summer: 'Peak production period - consistent irrigation critical for fruit quality.',
+        winter: 'Protected growing season - monitor humidity and reduce irrigation frequency.',
+        spring_fall: 'Planting or late harvest season - establish good irrigation patterns early.'
+      },
+      'maize': {
+        summer: 'Critical growth and reproduction period - ensure adequate water during tasseling.',
+        winter: 'Off-season in most regions - plan for next season irrigation infrastructure.',
+        spring_fall: 'Planting or harvest season - time irrigation with growth stages.'
+      },
+      'wheat': {
+        summer: 'Late growth or harvest period - reduce irrigation as crop matures.',
+        winter: 'Active growth period in winter wheat - maintain adequate moisture.',
+        spring_fall: 'Critical growth periods - ensure consistent irrigation during stem elongation.'
+      },
+      'potatoes': {
+        summer: 'Tuber development period - maintain consistent moisture to prevent defects.',
+        winter: 'Storage period or off-season - plan irrigation systems for next planting.',
+        spring_fall: 'Planting or harvest season - establish consistent watering patterns.'
+      }
+    };
+
+    const cropSeasonAdvice = seasonalAdvice[cropType.toLowerCase()];
+    return cropSeasonAdvice ? cropSeasonAdvice[season] : 'Adjust irrigation based on current growing season and local climate conditions.';
   }
 
   private getAdjustmentTriggers(): string[] {
