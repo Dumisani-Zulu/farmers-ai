@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { getDiseaseIdentificationService, DiseaseAnalysisResult } from '../../../ai/services/disease-identification-service';
+import DiseaseAnalysisResults from './DiseaseAnalysisResults';
 
 export default function DiseaseIdentifier() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<DiseaseAnalysisResult | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -32,18 +36,58 @@ export default function DiseaseIdentifier() {
     }
   };
 
-  const analyzeImage = () => {
+  const analyzeImage = async () => {
     if (!selectedImage) {
       Alert.alert('No Image', 'Please select an image first');
       return;
     }
     
     setIsAnalyzing(true);
-    // Simulate analysis
-    setTimeout(() => {
+    setAnalysisResults(null);
+    
+    try {
+      console.log('🔍 Starting disease analysis...');
+      const diseaseService = getDiseaseIdentificationService();
+      const results = await diseaseService.analyzeImage(selectedImage);
+      
+      console.log('✅ Analysis completed successfully');
+      setAnalysisResults(results);
+      setShowResults(true);
+      
+    } catch (error) {
+      console.error('❌ Analysis failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      
+      // Handle specific error types
+      if (errorMessage.includes('overloaded')) {
+        Alert.alert(
+          'Service Busy',
+          'The AI service is temporarily busy. Please try again in a moment.',
+          [{ text: 'OK' }]
+        );
+      } else if (errorMessage.includes('timeout')) {
+        Alert.alert(
+          'Analysis Timeout',
+          'The analysis took too long. Please try again with a clearer image.',
+          [{ text: 'OK' }]
+        );
+      } else if (errorMessage.includes('API key')) {
+        Alert.alert(
+          'Configuration Error',
+          'The AI service is not properly configured. Please check your settings.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Analysis Failed',
+          `Unable to analyze the image: ${errorMessage}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
       setIsAnalyzing(false);
-      Alert.alert('Analysis Complete', 'Disease identification results will be shown here');
-    }, 2000);
+    }
   };
 
   return (
@@ -100,13 +144,34 @@ export default function DiseaseIdentifier() {
         }`}
       >
         {isAnalyzing ? (
-          <Text className="text-white font-medium">Analyzing...</Text>
+          <View className="flex-row items-center">
+            <Ionicons name="sync" size={20} color="white" />
+            <Text className="text-white font-medium ml-2">Analyzing...</Text>
+          </View>
         ) : (
           <>
-            <Text className="text-lg text-black font-bold mt-1">Identify Disease</Text>
+            <Ionicons name="search" size={20} color={selectedImage ? "white" : "gray"} />
+            <Text className={`text-lg font-bold mt-1 ${selectedImage ? 'text-white' : 'text-gray-500'}`}>
+              Identify Disease
+            </Text>
           </>
         )}
       </TouchableOpacity>
+
+      {/* Results Modal */}
+      <Modal
+        visible={showResults}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowResults(false)}
+      >
+        {analysisResults && (
+          <DiseaseAnalysisResults
+            results={analysisResults}
+            onClose={() => setShowResults(false)}
+          />
+        )}
+      </Modal>
     </View>
   );
 }

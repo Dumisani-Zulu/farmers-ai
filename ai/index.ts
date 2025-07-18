@@ -24,6 +24,11 @@ export {
   type AICropRecommendation,
   type AICropSuggestion 
 } from './services/ai-crop-recommendation-service';
+export { 
+  getDiseaseIdentificationService, 
+  DiseaseIdentificationService,
+  type DiseaseAnalysisResult 
+} from './services/disease-identification-service';
 
 // Data
 export { 

@@ -13,6 +13,7 @@
     "lint": "expo lint",
     "ai:test": "npx tsx scripts/test-ai.ts",
     "ai:test-crops": "npx tsx scripts/test-ai-crops.ts",
+    "ai:test-disease": "npx tsx scripts/test-disease-identification.ts",
     "quota:test": "node scripts/test-quota.js",
     "setup:env": "cp .env.example .env",
     "fix:tsconfig": "node scripts/fix-tsconfig.js",

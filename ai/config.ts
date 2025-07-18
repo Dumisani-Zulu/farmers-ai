@@ -37,7 +37,7 @@ export const defaultAIConfig: AIConfig = {
     cropRecommendation: true,
     weatherAnalysis: true,
     seasonalAdvice: true,
-    diseaseDetection: false, // Will enable in later stages
+    diseaseDetection: true, // Enable disease detection
   },
 };
 
