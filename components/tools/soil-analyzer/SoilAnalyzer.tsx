@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { getSoilAnalysisService, SoilAnalysisResult } from '../../../ai/services/soil-analysis-service';
+import SoilAnalysisResults from './SoilAnalysisResults';
 
 export default function SoilAnalyzer() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<SoilAnalysisResult | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -35,26 +38,58 @@ export default function SoilAnalyzer() {
     }
   };
 
-  const analyzeImage = () => {
+  const analyzeImage = async () => {
     if (!selectedImage) {
       Alert.alert('No Image', 'Please select an image first');
       return;
     }
     
     setIsAnalyzing(true);
-    // Simulate analysis
-    setTimeout(() => {
+    setAnalysisResults(null);
+    
+    try {
+      console.log('🔍 Starting soil analysis...');
+      const soilService = getSoilAnalysisService();
+      const results = await soilService.analyzeImage(selectedImage);
+      
+      console.log('✅ Analysis completed successfully');
+      setAnalysisResults(results);
+      setShowResults(true);
+      
+    } catch (error) {
+      console.error('❌ Analysis failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      
+      // Handle specific error types
+      if (errorMessage.includes('overloaded')) {
+        Alert.alert(
+          'Service Busy',
+          'The AI service is temporarily busy. Please try again in a moment.',
+          [{ text: 'OK' }]
+        );
+      } else if (errorMessage.includes('timeout')) {
+        Alert.alert(
+          'Analysis Timeout',
+          'The analysis took too long. Please try again with a clearer image.',
+          [{ text: 'OK' }]
+        );
+      } else if (errorMessage.includes('API key')) {
+        Alert.alert(
+          'Configuration Error',
+          'The AI service is not properly configured. Please check your settings.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Analysis Failed',
+          `Unable to analyze the soil: ${errorMessage}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
       setIsAnalyzing(false);
-      setAnalysisResults({
-        soilType: 'Loamy',
-        pH: 6.8,
-        nitrogen: 'Medium',
-        phosphorus: 'High',
-        potassium: 'Low',
-        organicMatter: '3.2%',
-        moisture: '45%'
-      });
-    }, 3000);
+    }
   };
 
   return (
@@ -122,8 +157,8 @@ export default function SoilAnalyzer() {
         </TouchableOpacity>
 
         {analysisResults && (
-          <View className="bg-gray-50 rounded-lg p-4">
-            <Text className="text-xl font-bold text-gray-900 mb-4">Analysis Results</Text>
+          <View className="bg-gray-50 rounded-lg p-4 mb-6">
+            <Text className="text-xl font-bold text-gray-900 mb-4">Quick Results</Text>
             
             <View className="space-y-3">
               <View className="flex-row justify-between">
@@ -132,38 +167,54 @@ export default function SoilAnalyzer() {
               </View>
               
               <View className="flex-row justify-between">
+                <Text className="text-gray-600">Texture:</Text>
+                <Text className="font-medium capitalize">{analysisResults.texture}</Text>
+              </View>
+              
+              <View className="flex-row justify-between">
                 <Text className="text-gray-600">pH Level:</Text>
-                <Text className="font-medium">{analysisResults.pH}</Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Nitrogen:</Text>
-                <Text className="font-medium">{analysisResults.nitrogen}</Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Phosphorus:</Text>
-                <Text className="font-medium">{analysisResults.phosphorus}</Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600">Potassium:</Text>
-                <Text className="font-medium">{analysisResults.potassium}</Text>
+                <Text className="font-medium">{analysisResults.estimatedProperties.pH.level}</Text>
               </View>
               
               <View className="flex-row justify-between">
                 <Text className="text-gray-600">Organic Matter:</Text>
-                <Text className="font-medium">{analysisResults.organicMatter}</Text>
+                <Text className="font-medium">{analysisResults.estimatedProperties.organicMatter.level}</Text>
               </View>
               
               <View className="flex-row justify-between">
-                <Text className="text-gray-600">Moisture:</Text>
-                <Text className="font-medium">{analysisResults.moisture}</Text>
+                <Text className="text-gray-600">Drainage:</Text>
+                <Text className="font-medium">{analysisResults.estimatedProperties.drainage.level}</Text>
+              </View>
+              
+              <View className="flex-row justify-between">
+                <Text className="text-gray-600">Confidence:</Text>
+                <Text className="font-medium">{analysisResults.confidence}%</Text>
               </View>
             </View>
+
+            <TouchableOpacity
+              onPress={() => setShowResults(true)}
+              className="bg-blue-500 rounded-lg p-3 items-center mt-4"
+            >
+              <Text className="text-white font-medium">View Detailed Analysis</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
+
+      {/* Results Modal */}
+      <Modal
+        visible={showResults}
+        animationType="slide"
+        onRequestClose={() => setShowResults(false)}
+      >
+        {analysisResults && (
+          <SoilAnalysisResults
+            results={analysisResults}
+            onClose={() => setShowResults(false)}
+          />
+        )}
+      </Modal>
     </ScrollView>
   );
 }
