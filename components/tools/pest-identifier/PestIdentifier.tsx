@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { getPestIdentificationService, PestAnalysisResult } from '../../../ai/services/pest-identification-service';
+import PestAnalysisResults from './PestAnalysisResults';
 
 export default function PestIdentifier() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<PestAnalysisResult | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -32,18 +36,32 @@ export default function PestIdentifier() {
     }
   };
 
-  const analyzeImage = () => {
+  const analyzeImage = async () => {
     if (!selectedImage) {
       Alert.alert('No Image', 'Please select an image first');
       return;
     }
-    
     setIsAnalyzing(true);
-    // Simulate analysis
-    setTimeout(() => {
+    setAnalysisResults(null);
+    try {
+      const pestService = getPestIdentificationService();
+      const results = await pestService.analyzeImage(selectedImage);
+      setAnalysisResults(results);
+      setShowResults(true);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      if (errorMessage.includes('overloaded')) {
+        Alert.alert('Service Busy', 'The AI service is temporarily busy. Please try again in a moment.');
+      } else if (errorMessage.includes('timeout')) {
+        Alert.alert('Analysis Timeout', 'The analysis took too long. Please try again with a clearer image.');
+      } else if (errorMessage.includes('API key')) {
+        Alert.alert('Configuration Error', 'The AI service is not properly configured. Please check your settings.');
+      } else {
+        Alert.alert('Analysis Failed', `Unable to analyze the image: ${errorMessage}`);
+      }
+    } finally {
       setIsAnalyzing(false);
-      Alert.alert('Analysis Complete', 'Pest identification results will be shown here');
-    }, 2000);
+    }
   };
 
   return (
@@ -108,6 +126,19 @@ export default function PestIdentifier() {
           </>
         )}
       </TouchableOpacity>
+
+      {/* Results Modal */}
+      <Modal
+        visible={showResults}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowResults(false)}
+      >
+        {analysisResults && (
+          <PestAnalysisResults results={analysisResults} onClose={() => setShowResults(false)} />
+        )}
+      </Modal>
+
     </View>
   );
 }
