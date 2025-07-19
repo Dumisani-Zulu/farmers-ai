@@ -8,7 +8,7 @@
     "scheme": "farmers-ai",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/icon-square.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -37,30 +37,18 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "navigationBar": {
-        "backgroundColor": "#f8fafc",
-        "barStyle": "dark-content",
-        "visible": true
-      },
-      "statusBar": {
-        "backgroundColor": "#f8fafc",
-        "barStyle": "dark-content",
-        "translucent": false
-      },
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon-square.png"
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-location",
-      "expo-navigation-bar",
-      "expo-system-ui"
+      "expo-location"
     ],
     "experiments": {
       "typedRoutes": true
